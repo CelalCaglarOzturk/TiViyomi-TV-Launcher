@@ -1,9 +1,12 @@
 package dev.mudrock.tiviyomitvlauncher.ui.tab.home.row
 
 import android.view.KeyEvent
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -86,18 +89,32 @@ fun ChannelProgramCardRow(
 
     // Track which program should receive focus after recomposition
     var focusedProgramId by remember { mutableStateOf<String?>(null) }
-    val focusRequesters = remember { mutableMapOf<String, FocusRequester>() }
+    var isAnimatedFocused by remember { mutableStateOf(false) }
 
-    // Simple scale animation when focused - snap instantly on focus loss to prevent overlapping animations during fast navigation
+    // Netflix approach for low-end TV: Debounce scale animation during rapid navigation.
+    // Only scale up when focus rests/settles on a row for at least 120ms.
+    LaunchedEffect(isFocused) {
+        if (isFocused) {
+            delay(120L)
+            isAnimatedFocused = true
+        } else {
+            isAnimatedFocused = false
+        }
+    }
+
+    // Smooth scale animation when focus settles on a row
     val scale by animateFloatAsState(
-        targetValue = if (isFocused) 1.05f else 1.0f,
+        targetValue = if (isAnimatedFocused) 1.05f else 1.0f,
         animationSpec = if (areRowAnimationsEnabled) {
-            if (isFocused) spring(stiffness = 10_000f) else snap()
+            if (isAnimatedFocused) {
+                tween(durationMillis = 200, easing = FastOutSlowInEasing)
+            } else snap()
         } else snap(),
         label = "rowScale"
     )
 
     // Restore focus to the program that was being removed/moved after list recomposes
+    val focusRequesters = remember { mutableMapOf<String, FocusRequester>() }
     LaunchedEffect(focusedProgramId, programs) {
         if (focusedProgramId != null) {
             val focusRequester = focusRequesters[focusedProgramId]

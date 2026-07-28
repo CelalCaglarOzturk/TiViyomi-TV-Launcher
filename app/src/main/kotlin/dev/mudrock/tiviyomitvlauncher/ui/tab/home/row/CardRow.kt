@@ -19,7 +19,9 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,13 +58,23 @@ fun CardRow(
     val areRowAnimationsEnabled = enableAnimations && animChannelRow
 
     var isFocused by remember { mutableStateOf(false) }
+    var isAnimatedFocused by remember { mutableStateOf(false) }
 
-    val transition = updateTransition(targetState = isFocused, label = "rowTransition")
+    LaunchedEffect(isFocused) {
+        if (isFocused) {
+            delay(120L)
+            isAnimatedFocused = true
+        } else {
+            isAnimatedFocused = false
+        }
+    }
+
+    val transition = updateTransition(targetState = isAnimatedFocused, label = "rowTransition")
 
     val alpha by transition.animateFloat(
         transitionSpec = {
             if (areRowAnimationsEnabled) {
-                if (targetState) tween(durationMillis = 150, easing = FastOutSlowInEasing) else snap()
+                if (targetState) tween(durationMillis = 200, easing = FastOutSlowInEasing) else snap()
             } else snap()
         },
         label = "rowAlpha"
@@ -73,7 +85,7 @@ fun CardRow(
     val scale by transition.animateFloat(
         transitionSpec = {
             if (areRowAnimationsEnabled) {
-                if (targetState) spring(dampingRatio = 0.8f, stiffness = 800f) else snap()
+                if (targetState) tween(durationMillis = 200, easing = FastOutSlowInEasing) else snap()
             } else snap()
         },
         label = "rowScale"
