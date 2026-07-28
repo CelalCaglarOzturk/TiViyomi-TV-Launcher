@@ -84,15 +84,15 @@ fun AppBase(
 							onOnboardingComplete()
 						}
 					)
+				} else {
+					LauncherScreen(
+						pendingDeepLink = deepLink,
+						onDeepLinkHandled = {
+							deepLink = null
+							onDeepLinkHandled()
+						}
+					)
 				}
-				
-				LauncherScreen(
-					pendingDeepLink = deepLink,
-					onDeepLinkHandled = {
-						deepLink = null
-						onDeepLinkHandled()
-					}
-				)
 			}
 		}
 	}

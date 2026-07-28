@@ -97,7 +97,9 @@ class SettingsRepository(
 
     // Toolbar Settings
     private val _toolbarItemsOrder = MutableStateFlow(
-        prefs.getStringSet(KEY_TOOLBAR_ITEMS_ORDER, null)?.toList() ?: DEFAULT_TOOLBAR_ITEMS_ORDER
+        prefs.getString(KEY_TOOLBAR_ITEMS_ORDER, null)?.split(",")?.filter { it.isNotBlank() }
+            ?: (try { prefs.getStringSet(KEY_TOOLBAR_ITEMS_ORDER, null)?.toList() } catch (e: Exception) { null })
+            ?: DEFAULT_TOOLBAR_ITEMS_ORDER
     )
     val toolbarItemsOrder = _toolbarItemsOrder.asStateFlow()
 
@@ -271,7 +273,7 @@ class SettingsRepository(
 
     fun setToolbarItemsOrder(order: List<String>) {
         try {
-            prefs.edit { putStringSet(KEY_TOOLBAR_ITEMS_ORDER, order.toSet()) }
+            prefs.edit { putString(KEY_TOOLBAR_ITEMS_ORDER, order.joinToString(",")) }
             _toolbarItemsOrder.value = order
         } catch (e: Exception) {
             Timber.e(e, "Failed to set toolbar items order")
