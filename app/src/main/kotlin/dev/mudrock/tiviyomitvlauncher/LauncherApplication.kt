@@ -1,6 +1,10 @@
 package dev.mudrock.tiviyomitvlauncher
 
+import android.app.ActivityManager
 import android.app.Application
+import android.content.ComponentCallbacks2
+import android.content.Context
+import android.graphics.Bitmap
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.util.DebugLogger
@@ -52,7 +56,10 @@ private val databaseModule = module {
     single { DatabaseContainer(get()) }
 }
 
-class LauncherApplication : Application(), ImageLoaderFactory {
+class LauncherApplication : Application(), ImageLoaderFactory, ComponentCallbacks2 {
+
+    private var imageLoaderRef: ImageLoader? = null
+
     override fun onCreate() {
         super.onCreate()
 
@@ -68,32 +75,65 @@ class LauncherApplication : Application(), ImageLoaderFactory {
         }
     }
 
-    override fun newImageLoader() = ImageLoader.Builder(this)
-        .memoryCache {
-            coil.memory.MemoryCache.Builder(this)
-                .maxSizePercent(0.35)
-                .strongReferencesEnabled(true)
-                .build()
-        }
-        .diskCache {
-            coil.disk.DiskCache.Builder()
-                .directory(cacheDir.resolve("image_cache"))
-                .maxSizeBytes(100L * 1024 * 1024)
-                .build()
-        }
-        .components {
-            // Register keyer for proper cache key generation
-            add(AppIconFetcher.AppKeyer())
-            // Register fetcher for loading app icons
-            add(AppIconFetcher.Factory(this@LauncherApplication))
-        }
-        // Only enable debug logging in debug builds
-        .apply {
-            if (BuildConfig.DEBUG) {
-                logger(DebugLogger())
+    private fun isLowRamDevice(): Boolean {
+        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        return activityManager?.isLowRamDevice == true
+    }
+
+    override fun newImageLoader(): ImageLoader {
+        val isLowRam = isLowRamDevice()
+        // Dynamic memory cache sizing: 10% for low-RAM TV devices, 20% for standard devices
+        val memoryCachePercent = if (isLowRam) 0.10 else 0.20
+        // Dynamic disk cache limit (no fixed 100MB static allocation): 20MB for low-RAM, 50MB for standard
+        val diskCacheMaxBytes = if (isLowRam) 20L * 1024 * 1024 else 50L * 1024 * 1024
+
+        val loader = ImageLoader.Builder(this)
+            .memoryCache {
+                coil.memory.MemoryCache.Builder(this)
+                    .maxSizePercent(memoryCachePercent)
+                    .strongReferencesEnabled(false) // Allow GC under memory pressure
+                    .build()
             }
+            .diskCache {
+                coil.disk.DiskCache.Builder()
+                    .directory(cacheDir.resolve("image_cache"))
+                    .maxSizeBytes(diskCacheMaxBytes)
+                    .build()
+            }
+            .components {
+                // Register keyer for proper cache key generation
+                add(AppIconFetcher.AppKeyer())
+                // Register fetcher for loading app icons
+                add(AppIconFetcher.Factory(this@LauncherApplication))
+            }
+            .apply {
+                if (isLowRam) {
+                    bitmapConfig(Bitmap.Config.RGB_565)
+                }
+                if (BuildConfig.DEBUG) {
+                    logger(DebugLogger())
+                }
+            }
+            // App icons don't have HTTP cache headers
+            .respectCacheHeaders(false)
+            .build()
+
+        imageLoaderRef = loader
+        return loader
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        // Immediately release image memory cache when system indicates memory pressure (level >= 10 or UI hidden)
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_BACKGROUND || level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN || level >= 10) {
+            Timber.d("LauncherApplication: Trimming image memory cache (level $level)")
+            imageLoaderRef?.memoryCache?.clear()
         }
-        // Enable memory and disk caching (enabled by default, but being explicit)
-        .respectCacheHeaders(false) // App icons don't have HTTP cache headers
-        .build()
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        Timber.w("LauncherApplication: System low memory warning - clearing image cache")
+        imageLoaderRef?.memoryCache?.clear()
+    }
 }

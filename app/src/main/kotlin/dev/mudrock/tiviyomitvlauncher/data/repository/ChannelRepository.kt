@@ -128,40 +128,10 @@ class ChannelRepository(
             refreshWatchNextChannels()
             refreshPreviewChannels()
 
-            // Preload images for all program cards into Coil memory/disk cache before stopping refresh spinner
-            preloadAllProgramImages()
+            // Images are loaded lazily on demand by UI components to minimize RAM consumption
             Timber.d("All channels refreshed")
         } finally {
             _isRefreshing.value = false
-        }
-    }
-
-    private suspend fun preloadAllProgramImages() = withContext(Dispatchers.IO) {
-        try {
-            val allPrograms = database.channelPrograms.getAll().executeAsList()
-            val imageLoader = coil.Coil.imageLoader(context)
-
-            coroutineScope {
-                allPrograms.filter { !it.posterArtUri.isNullOrEmpty() }.chunked(6).forEach { batch ->
-                    batch.map { program ->
-                        async {
-                            try {
-                                val uri = program.posterArtUri!!
-                                val request = coil.request.ImageRequest.Builder(context)
-                                    .data(uri)
-                                    .memoryCacheKey("program:${program.id}:$uri")
-                                    .diskCacheKey("program:${program.id}:$uri")
-                                    .build()
-                                imageLoader.execute(request)
-                            } catch (e: Exception) {
-                                // Ignore individual image load failures during preload
-                            }
-                        }
-                    }.awaitAll()
-                }
-            }
-        } catch (e: Exception) {
-            Timber.w(e, "Failed to preload program images")
         }
     }
 
