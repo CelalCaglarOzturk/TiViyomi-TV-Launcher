@@ -1,6 +1,8 @@
 package dev.mudrock.tiviyomitvlauncher.ui.onboarding
 
 import android.content.Context
+import android.content.Intent
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
@@ -27,10 +29,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Input
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,7 +57,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
@@ -75,7 +81,6 @@ fun OnboardingDialog(
     val defaultLauncherHelper = remember { DefaultLauncherHelper(context) }
     
     val nextButtonFocusRequester = remember { FocusRequester() }
-    val defaultLauncherButtonFocusRequester = remember { FocusRequester() }
 
     // Intercept physical remote back button
     BackHandler {
@@ -86,7 +91,7 @@ fun OnboardingDialog(
         }
     }
 
-    // Auto-focus primary button on page change
+    // Auto-focus primary action button on page change for instant DPAD control
     LaunchedEffect(currentPage) {
         try {
             nextButtonFocusRequester.requestFocus()
@@ -95,7 +100,7 @@ fun OnboardingDialog(
         }
     }
 
-    // Full 100% viewport Android TV surface with ambient gradient
+    // Full 100% viewport Android TV surface with ambient background
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -113,14 +118,12 @@ fun OnboardingDialog(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 48.dp, vertical = 32.dp),
+                .padding(horizontal = 48.dp, vertical = 28.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             // Top Header Bar
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -132,23 +135,29 @@ fun OnboardingDialog(
                         painter = painterResource(R.drawable.ic_launcher_foreground),
                         contentDescription = null,
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(42.dp)
                             .background(Color(0xFF312E81), CircleShape)
                             .padding(4.dp)
                     )
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                    Column {
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
                         )
-                    )
+                        Text(
+                            text = "Comprehensive Setup & Capabilities Walkthrough",
+                            style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFF94A3B8))
+                        )
+                    }
                 }
 
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     colors = androidx.tv.material3.SurfaceDefaults.colors(
-                        containerColor = Color(0xFF1E293B).copy(alpha = 0.7f)
+                        containerColor = Color(0xFF1E293B).copy(alpha = 0.8f)
                     ),
                     modifier = Modifier.border(1.dp, Color(0xFF334155), RoundedCornerShape(20.dp))
                 ) {
@@ -173,11 +182,11 @@ fun OnboardingDialog(
                 horizontalArrangement = Arrangement.spacedBy(36.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left Column (40% Viewport Width): Hero Feature Card & Indicators
+                // Left Column (40% Viewport Width): Visual Feature Showcase & Indicators
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     colors = androidx.tv.material3.SurfaceDefaults.colors(
-                        containerColor = Color(0xFF0F172A).copy(alpha = 0.85f)
+                        containerColor = Color(0xFF0F172A).copy(alpha = 0.9f)
                     ),
                     modifier = Modifier
                         .weight(0.40f)
@@ -187,10 +196,20 @@ fun OnboardingDialog(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(32.dp),
+                            .padding(28.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
+                        // Category Badge
+                        Text(
+                            text = OnboardingPage.pages[currentPage].categoryBadge.uppercase(),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = Color(0xFF818CF8),
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 2.sp
+                            )
+                        )
+
                         // Hero Icon Showcase with smooth transition
                         Crossfade(
                             targetState = OnboardingPage.pages[currentPage],
@@ -198,11 +217,11 @@ fun OnboardingDialog(
                         ) { page ->
                             Box(
                                 modifier = Modifier
-                                    .size(140.dp)
+                                    .size(130.dp)
                                     .clip(RoundedCornerShape(28.dp))
                                     .background(
                                         Brush.linearGradient(
-                                            listOf(Color(0xFF4F46E5), Color(0xFF4338CA))
+                                            listOf(page.accentColor, page.secondaryAccentColor)
                                         )
                                     ),
                                 contentAlignment = Alignment.Center
@@ -211,32 +230,34 @@ fun OnboardingDialog(
                                     imageVector = page.icon,
                                     contentDescription = null,
                                     tint = Color.White,
-                                    modifier = Modifier.size(72.dp)
+                                    modifier = Modifier.size(64.dp)
                                 )
                             }
                         }
 
                         // Feature Badges specific to current step
                         Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalAlignment = Alignment.Start,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             val page = OnboardingPage.pages[currentPage]
                             page.highlights.forEach { highlight ->
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
                                         contentDescription = null,
-                                        tint = Color(0xFF818CF8),
+                                        tint = page.accentColor,
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Text(
                                         text = highlight,
                                         style = MaterialTheme.typography.bodyMedium.copy(
-                                            color = Color(0xFFE2E8F0)
+                                            color = Color(0xFFE2E8F0),
+                                            fontWeight = FontWeight.Medium
                                         )
                                     )
                                 }
@@ -245,7 +266,7 @@ fun OnboardingDialog(
 
                         // Step Pager Dots Indicator
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             repeat(pageCount) { index ->
@@ -265,22 +286,22 @@ fun OnboardingDialog(
                     }
                 }
 
-                // Right Column (60% Viewport Width): Title, Description & Action Steps
+                // Right Column (60% Viewport Width): Title, Capabilities Detail & Live Action Prompts
                 Column(
                     modifier = Modifier
                         .weight(0.60f)
                         .fillMaxHeight()
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 8.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "STEP ${currentPage + 1} OF $pageCount",
+                        text = "CAPABILITY ${currentPage + 1} OF $pageCount",
                         style = MaterialTheme.typography.labelMedium.copy(
                             color = Color(0xFF818CF8),
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         ),
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(bottom = 6.dp)
                     )
 
                     AnimatedContent(
@@ -290,77 +311,119 @@ fun OnboardingDialog(
                     ) { page ->
                         Column {
                             Text(
-                                text = stringResource(page.titleRes),
+                                text = page.title,
                                 style = MaterialTheme.typography.headlineLarge.copy(
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color.White
                                 ),
-                                modifier = Modifier.padding(bottom = 16.dp)
+                                modifier = Modifier.padding(bottom = 12.dp)
                             )
 
                             Text(
-                                text = stringResource(page.descriptionRes),
+                                text = page.description,
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     color = Color(0xFF94A3B8),
-                                    lineHeight = 28.sp,
-                                    fontSize = 18.sp
+                                    lineHeight = 26.sp,
+                                    fontSize = 17.sp
                                 ),
-                                modifier = Modifier.padding(bottom = 24.dp)
+                                modifier = Modifier.padding(bottom = 20.dp)
                             )
                         }
                     }
 
-                    // Special action step for Step 4 (Default Launcher request)
-                    if (isLastPage && defaultLauncherHelper.canRequestDefaultLauncher()) {
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = androidx.tv.material3.SurfaceDefaults.colors(
-                                containerColor = Color(0xFF1E293B)
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp)
-                                .border(1.dp, Color(0xFF374151), RoundedCornerShape(16.dp))
-                        ) {
-                            Row(
+                    // Interactive Step Action Controls based on capability page
+                    when (currentPage) {
+                        2 -> { // Step 3: Default Launcher & Accessibility setup
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                ActionCard(
+                                    title = "Set as Default Home Launcher",
+                                    subtitle = if (defaultLauncherHelper.isDefaultLauncher()) "Currently set as default launcher" else "Prompt Android TV home application selection",
+                                    buttonText = "Set Default",
+                                    isDone = defaultLauncherHelper.isDefaultLauncher(),
+                                    onClick = {
+                                        defaultLauncherHelper.requestDefaultLauncherIntent()?.let { intent ->
+                                            context.startActivity(intent)
+                                        }
+                                    }
+                                )
+                                ActionCard(
+                                    title = "Home Key Accessibility Interceptor",
+                                    subtitle = "Allows launcher to catch Home key when leaving external apps",
+                                    buttonText = "Open Accessibility",
+                                    isDone = false,
+                                    onClick = {
+                                        try {
+                                            context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                                        } catch (e: Exception) {
+                                            context.startActivity(Intent(Settings.ACTION_SETTINGS))
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                        3 -> { // Step 4: Appearance & Animations Preview
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = androidx.tv.material3.SurfaceDefaults.colors(
+                                    containerColor = Color(0xFF1E293B)
+                                ),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = stringResource(R.string.onboarding_page4_title),
-                                        style = MaterialTheme.typography.titleMedium.copy(
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    )
-                                    Text(
-                                        text = if (defaultLauncherHelper.isDefaultLauncher()) "Currently set as default launcher" else "Tap to prompt Android TV home app selection",
-                                        style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF94A3B8))
-                                    )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceAround,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    CapabilityPill(icon = Icons.Default.Palette, label = "Custom Wallpaper & Color Presets")
+                                    CapabilityPill(icon = Icons.Default.TouchApp, label = "App & Channel Card Resizing")
                                 }
-
-                                if (!defaultLauncherHelper.isDefaultLauncher()) {
-                                    Button(
-                                        onClick = {
-                                            val intent = defaultLauncherHelper.requestDefaultLauncherIntent()
-                                            if (intent != null) {
-                                                context.startActivity(intent)
-                                            }
-                                        },
-                                        modifier = Modifier.focusRequester(defaultLauncherButtonFocusRequester)
-                                    ) {
-                                        Text("Set Default")
-                                    }
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Default.CheckCircle,
-                                        contentDescription = null,
-                                        tint = Color(0xFF10B981)
-                                    )
+                            }
+                        }
+                        4 -> { // Step 5: Toolbar & Inputs Preview
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = androidx.tv.material3.SurfaceDefaults.colors(
+                                    containerColor = Color(0xFF1E293B)
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceAround,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    CapabilityPill(icon = Icons.AutoMirrored.Filled.Input, label = "HDMI 1/2 Input Switcher")
+                                    CapabilityPill(icon = Icons.Default.Settings, label = "Reorderable Top Toolbar")
+                                }
+                            }
+                        }
+                        5 -> { // Step 6: Backup & Safety
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = androidx.tv.material3.SurfaceDefaults.colors(
+                                    containerColor = Color(0xFF1E293B)
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceAround,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    CapabilityPill(icon = Icons.Default.Backup, label = "JSON Storage Backup")
+                                    CapabilityPill(icon = Icons.Default.Security, label = "Automatic Crash Recovery")
                                 }
                             }
                         }
@@ -370,13 +433,11 @@ fun OnboardingDialog(
 
             // Bottom Navigation Control Row
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left: Back button (if available)
+                // Left: Back button
                 if (currentPage > 0) {
                     OutlinedButton(
                         onClick = { currentPage-- },
@@ -390,7 +451,7 @@ fun OnboardingDialog(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                            Text("Back")
+                            Text("Previous Step")
                         }
                     }
                 } else {
@@ -443,7 +504,7 @@ fun OnboardingDialog(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null)
-                                Text(stringResource(R.string.onboarding_get_started))
+                                Text("Complete Setup & Start")
                             }
                         }
                     }
@@ -453,37 +514,184 @@ fun OnboardingDialog(
     }
 }
 
+@Composable
+private fun ActionCard(
+    title: String,
+    subtitle: String,
+    buttonText: String,
+    isDone: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        colors = androidx.tv.material3.SurfaceDefaults.colors(
+            containerColor = Color(0xFF1E293B)
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, Color(0xFF334155), RoundedCornerShape(14.dp))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF94A3B8))
+                )
+            }
+
+            if (!isDone) {
+                Button(
+                    onClick = onClick,
+                    colors = ButtonDefaults.colors(
+                        containerColor = Color(0xFF4F46E5),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(buttonText)
+                }
+            } else {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF10B981)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CapabilityPill(
+    icon: ImageVector,
+    label: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color(0xFFA5B4FC),
+            modifier = Modifier.size(20.dp)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                color = Color.White,
+                fontWeight = FontWeight.Medium
+            )
+        )
+    }
+}
+
 data class OnboardingPage(
+    val categoryBadge: String,
     val icon: ImageVector,
-    val titleRes: Int,
-    val descriptionRes: Int,
+    val accentColor: Color,
+    val secondaryAccentColor: Color,
+    val title: String,
+    val description: String,
     val highlights: List<String>
 ) {
     companion object {
         val pages = listOf(
+            // Page 1: Overview
             OnboardingPage(
+                categoryBadge = "Core Philosophy",
                 icon = Icons.Default.Home,
-                titleRes = R.string.onboarding_page1_title,
-                descriptionRes = R.string.onboarding_page1_description,
-                highlights = listOf("Clean & Modern UX", "Zero Bloatware", "Ultra Fast Loading")
+                accentColor = Color(0xFF4F46E5),
+                secondaryAccentColor = Color(0xFF4338CA),
+                title = "Clean, Fast & Open Source Home Screen",
+                description = "TiViyomi TV Launcher is built specifically for Android TV and Google TV devices. It provides a lightweight, bloatware-free home screen with zero ads and lightning-fast responsiveness.",
+                highlights = listOf(
+                    "100% Ad-free & privacy focused",
+                    "Built with Jetpack Compose for Android TV",
+                    "Lightweight memory & CPU footprint"
+                )
             ),
+            // Page 2: Apps & Channels
             OnboardingPage(
+                categoryBadge = "Apps & Feeds",
                 icon = Icons.Default.Apps,
-                titleRes = R.string.onboarding_page2_title,
-                descriptionRes = R.string.onboarding_page2_description,
-                highlights = listOf("Drag & Move Apps", "Favorites Section", "Hide Unwanted Apps")
+                accentColor = Color(0xFF0EA5E9),
+                secondaryAccentColor = Color(0xFF0284C7),
+                title = "Custom App Grid & Channel Rows",
+                description = "Easily manage your favorite applications and Watch Next channel feeds. Long-press any app card or channel row with your TV remote to reorder, add to favorites, or hide apps.",
+                highlights = listOf(
+                    "Long-press DPAD / Menu key for App Options",
+                    "Hide unwanted stock or system apps",
+                    "Show non-TV mobile apps toggle"
+                )
             ),
+            // Page 3: System Interception
             OnboardingPage(
-                icon = Icons.Default.Settings,
-                titleRes = R.string.onboarding_page3_title,
-                descriptionRes = R.string.onboarding_page3_description,
-                highlights = listOf("Custom Grid Sizes", "Smooth Animations", "Backup & Restore")
-            ),
-            OnboardingPage(
+                categoryBadge = "System Integration",
                 icon = Icons.Default.Tv,
-                titleRes = R.string.onboarding_page4_title,
-                descriptionRes = R.string.onboarding_page4_description,
-                highlights = listOf("One-click Home Key Setup", "Suppression Mode", "Full TV Remote Support")
+                accentColor = Color(0xFF8B5CF6),
+                secondaryAccentColor = Color(0xFF7C3AED),
+                title = "Home Button Interception & Default Launcher",
+                description = "Set TiViyomi as your default launcher and enable Accessibility Interception so pressing the Home button on your TV remote always brings you directly back home.",
+                highlights = listOf(
+                    "Default Home launcher integration",
+                    "Home key press interception from external apps",
+                    "Smooth transition back to home screen"
+                )
+            ),
+            // Page 4: Visual Personalization
+            OnboardingPage(
+                categoryBadge = "Personalization",
+                icon = Icons.Default.Palette,
+                accentColor = Color(0xFFEC4899),
+                secondaryAccentColor = Color(0xFFDB2777),
+                title = "Card Resizing, Wallpapers & Animations",
+                description = "Customize card dimensions for apps and channel rows. Choose custom background wallpapers, preset colors, and configure smooth marquee text and row scaling animations.",
+                highlights = listOf(
+                    "Adjust app card size (70dp to 220dp)",
+                    "Custom image wallpapers & color presets",
+                    "Granular control over focus animations"
+                )
+            ),
+            // Page 5: Toolbar & Inputs
+            OnboardingPage(
+                categoryBadge = "Quick Controls",
+                icon = Icons.AutoMirrored.Filled.Input,
+                accentColor = Color(0xFFF59E0B),
+                secondaryAccentColor = Color(0xFFD97706),
+                title = "Reorderable Toolbar & HDMI Switcher",
+                description = "Instantly switch between HDMI inputs and customize top bar items. Drag and reorder Wi-Fi, System Settings, Launcher Settings, Notifications, and Channel Refresh actions.",
+                highlights = listOf(
+                    "HDMI 1, HDMI 2, AV input fast switcher",
+                    "Customize top bar icon visibility & order",
+                    "One-tap channel list reloader"
+                )
+            ),
+            // Page 6: Backup & Crash Recovery
+            OnboardingPage(
+                categoryBadge = "Data & Safety",
+                icon = Icons.Default.Backup,
+                accentColor = Color(0xFF10B981),
+                secondaryAccentColor = Color(0xFF059669),
+                title = "Backup, Restore & Crash Protection",
+                description = "Safely back up your entire launcher configuration to your TV storage. If a system failure occurs, built-in crash loop detection automatically launches Recovery Mode to restore your launcher.",
+                highlights = listOf(
+                    "JSON layout backup to Documents folder",
+                    "Timestamped backup history snapshots",
+                    "Automatic crash loop protection"
+                )
             )
         )
     }
