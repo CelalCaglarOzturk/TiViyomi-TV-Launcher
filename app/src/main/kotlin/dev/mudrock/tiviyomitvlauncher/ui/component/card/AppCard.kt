@@ -108,12 +108,23 @@ fun AppCard(
     
     val isFocused by interactionSource.collectIsFocusedAsState()
 
-    val highlightColors = remember {
-        listOf(
-            Color.White.copy(alpha = 0.3f),
-            Color.White.copy(alpha = 0.0f)
-        )
-    }
+    val focusBorderWidth by androidx.compose.animation.core.animateDpAsState(
+        targetValue = if (isFocused) 3.dp else 0.dp,
+        animationSpec = if (areAnimationsEnabled) androidx.compose.animation.core.tween(durationMillis = 180, easing = androidx.compose.animation.core.FastOutSlowInEasing) else androidx.compose.animation.core.snap(),
+        label = "appFocusBorderWidth"
+    )
+
+    val focusBorderColor by androidx.compose.animation.animateColorAsState(
+        targetValue = if (isFocused) Color.White else Color.Transparent,
+        animationSpec = if (areAnimationsEnabled) androidx.compose.animation.core.tween(durationMillis = 180, easing = androidx.compose.animation.core.FastOutSlowInEasing) else androidx.compose.animation.core.snap(),
+        label = "appFocusBorderColor"
+    )
+
+    val focusHighlightAlpha by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isFocused) 0.3f else 0.0f,
+        animationSpec = if (areAnimationsEnabled) androidx.compose.animation.core.tween(durationMillis = 180, easing = androidx.compose.animation.core.FastOutSlowInEasing) else androidx.compose.animation.core.snap(),
+        label = "appFocusHighlightAlpha"
+    )
 
     PopupContainer(
         visible = menuVisible && hasPopupContent,
@@ -134,25 +145,26 @@ fun AppCard(
                         modifier = Modifier
                             .height(baseHeight)
                             .aspectRatio(16f / 9f)
-                            .then(
-                                if (isFocused) {
-                                    Modifier.drawBehind {
-                                        drawRect(
-                                            brush = Brush.radialGradient(
-                                                colors = highlightColors,
-                                                radius = size.maxDimension * 0.8f
-                                            )
+                            .drawBehind {
+                                if (focusHighlightAlpha > 0f) {
+                                    drawRect(
+                                        brush = Brush.radialGradient(
+                                            colors = listOf(
+                                                Color.White.copy(alpha = focusHighlightAlpha),
+                                                Color.White.copy(alpha = 0f)
+                                            ),
+                                            radius = size.maxDimension * 0.8f
                                         )
-                                    }
-                                } else Modifier
-                            ),
+                                    )
+                                }
+                            },
                         interactionSource = interactionSource,
                         border = CardDefaults.border(
+                            border = Border(
+                                border = BorderStroke(focusBorderWidth, focusBorderColor),
+                            ),
                             focusedBorder = Border(
-                                border = BorderStroke(
-                                    3.dp,
-                                    Color.White
-                                ),
+                                border = BorderStroke(3.dp, Color.White),
                             )
                         ),
                         onClick = {

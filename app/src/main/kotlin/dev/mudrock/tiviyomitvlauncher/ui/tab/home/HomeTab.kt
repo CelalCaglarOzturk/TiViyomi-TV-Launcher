@@ -28,6 +28,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -37,6 +38,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.focus.onFocusChanged
+import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -109,6 +112,7 @@ fun HomeTab(
 
     // Use rememberSaveable to preserve scroll position across tab switches
     val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
 
     // Stable focus requester that persists across recompositions
     val firstItemFocusRequester = remember { FocusRequester() }
@@ -173,11 +177,21 @@ fun HomeTab(
             key = "apps",
             contentType = "apps_row"
         ) {
-            AppCardRow(
-                apps = apps,
-                baseHeight = appCardSize.dp,
-                firstItemFocusRequester = firstItemFocusRequester
-            )
+            Box(
+                modifier = Modifier.onFocusChanged { focusState ->
+                    if (focusState.hasFocus) {
+                        coroutineScope.launch {
+                            listState.animateScrollToItem(0)
+                        }
+                    }
+                }
+            ) {
+                AppCardRow(
+                    apps = apps,
+                    baseHeight = appCardSize.dp,
+                    firstItemFocusRequester = firstItemFocusRequester
+                )
+            }
         }
 
         itemsIndexed(
@@ -268,7 +282,17 @@ fun HomeTab(
                     }
                 } else null
 
-                Box(modifier = if (areMoveAnimationsEnabled) Modifier.animateItem() else Modifier) {
+                Box(
+                    modifier = Modifier
+                        .onFocusChanged { focusState ->
+                            if (focusState.hasFocus) {
+                                coroutineScope.launch {
+                                    listState.animateScrollToItem(index + 1)
+                                }
+                            }
+                        }
+                        .then(if (areMoveAnimationsEnabled) Modifier.animateItem() else Modifier)
+                ) {
                     ChannelProgramCardRow(
                         modifier = Modifier
                             .focusRequester(focusRequester)
@@ -316,7 +340,15 @@ fun HomeTab(
                 contentType = "disabled_channels_section"
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { focusState ->
+                            if (focusState.hasFocus) {
+                                coroutineScope.launch {
+                                    listState.animateScrollToItem(enabledChannels.size + 1)
+                                }
+                            }
+                        }
                 ) {
                     Text(
                         text = stringResource(R.string.disabled_channels),
