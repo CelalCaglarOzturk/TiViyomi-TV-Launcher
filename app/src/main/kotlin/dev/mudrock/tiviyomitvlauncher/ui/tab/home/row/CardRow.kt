@@ -62,7 +62,7 @@ fun CardRow(
     val alpha by transition.animateFloat(
         transitionSpec = {
             if (areRowAnimationsEnabled) {
-                tween(durationMillis = 250, easing = FastOutSlowInEasing)
+                if (targetState) tween(durationMillis = 150, easing = FastOutSlowInEasing) else snap()
             } else snap()
         },
         label = "rowAlpha"
@@ -73,7 +73,7 @@ fun CardRow(
     val scale by transition.animateFloat(
         transitionSpec = {
             if (areRowAnimationsEnabled) {
-                spring(dampingRatio = 0.8f, stiffness = 400f)
+                if (targetState) spring(dampingRatio = 0.8f, stiffness = 800f) else snap()
             } else snap()
         },
         label = "rowScale"

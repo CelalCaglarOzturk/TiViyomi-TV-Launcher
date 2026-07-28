@@ -88,10 +88,12 @@ fun ChannelProgramCardRow(
     var focusedProgramId by remember { mutableStateOf<String?>(null) }
     val focusRequesters = remember { mutableMapOf<String, FocusRequester>() }
 
-    // Simple scale animation when focused
+    // Simple scale animation when focused - snap instantly on focus loss to prevent overlapping animations during fast navigation
     val scale by animateFloatAsState(
         targetValue = if (isFocused) 1.05f else 1.0f,
-        animationSpec = if (areRowAnimationsEnabled) spring(stiffness = 10_000f) else snap(),
+        animationSpec = if (areRowAnimationsEnabled) {
+            if (isFocused) spring(stiffness = 10_000f) else snap()
+        } else snap(),
         label = "rowScale"
     )
 
