@@ -53,6 +53,7 @@ fun Toolbar(
                     SettingsRepository.Companion.ToolbarItem.INPUTS -> ToolbarInputsButton()
                     SettingsRepository.Companion.ToolbarItem.NOTIFICATIONS -> ToolbarNotificationsButton()
                     SettingsRepository.Companion.ToolbarItem.WIFI -> ToolbarWifiButton()
+                    SettingsRepository.Companion.ToolbarItem.REFRESH -> ToolbarRefreshButton()
                     SettingsRepository.Companion.ToolbarItem.LAUNCHER_SETTINGS -> ToolbarLauncherSettingsButton(onClick = onOpenLauncherSettings)
                     SettingsRepository.Companion.ToolbarItem.SETTINGS -> ToolbarSettingsButton()
                 }

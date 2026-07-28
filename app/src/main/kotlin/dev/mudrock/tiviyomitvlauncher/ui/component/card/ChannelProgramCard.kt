@@ -82,8 +82,11 @@ fun ChannelProgramCard(
     val imageRequest = remember(program.posterArtUri, context, enableAnimations, requestWidth, requestHeight) {
         ImageRequest.Builder(context)
             .data(program.posterArtUri)
-            .memoryCacheKey("program:${program.id}")
-            .diskCacheKey("program:${program.id}")
+            // Include the URI in the cache key so that when a channel app updates
+            // its artwork (same program ID, different content) the Refresh button
+            // correctly busts the cache and loads the new image.
+            .memoryCacheKey("program:${program.id}:${program.posterArtUri}")
+            .diskCacheKey("program:${program.id}:${program.posterArtUri}")
             .memoryCachePolicy(CachePolicy.ENABLED)
             .diskCachePolicy(CachePolicy.ENABLED)
             .allowHardware(true)

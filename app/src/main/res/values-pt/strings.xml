@@ -105,6 +105,12 @@
 	<string name="toolbar_wifi">Wi-Fi</string>
 	<string name="toolbar_launcher_settings">Definições do Launcher</string>
 	<string name="toolbar_settings">Definições do Sistema</string>
+	<string name="toolbar_refresh">Atualizar canais</string>
+
+	<!-- Refresh Channels Dialog -->
+	<string name="refresh_channels_title">Atualizar canais?</string>
+	<string name="refresh_channels_message">Todos os cartões de canais serão recarregados a partir das suas aplicações instaladas. Os cartões de aplicações não serão afetados.</string>
+	<string name="refresh_channels_confirm">Atualizar</string>
 
 	<!-- Channel Settings -->
 	<string name="settings_channel">Definições de Canal</string>

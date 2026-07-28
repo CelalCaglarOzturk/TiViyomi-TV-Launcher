@@ -44,6 +44,7 @@ class SettingsRepository(
             ToolbarItem.WIFI.name,
             ToolbarItem.LAUNCHER_SETTINGS.name,
             ToolbarItem.SETTINGS.name,
+            ToolbarItem.REFRESH.name,
             ToolbarItem.CLOCK.name
         )
 
@@ -51,7 +52,7 @@ class SettingsRepository(
         val DEFAULT_TOOLBAR_ITEMS_ENABLED = ToolbarItem.entries.map { it.name }.toSet()
 
         enum class ToolbarItem {
-            CLOCK, INPUTS, NOTIFICATIONS, WIFI, LAUNCHER_SETTINGS, SETTINGS
+            CLOCK, INPUTS, NOTIFICATIONS, WIFI, REFRESH, LAUNCHER_SETTINGS, SETTINGS
         }
     }
 

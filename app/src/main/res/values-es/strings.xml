@@ -89,6 +89,12 @@
 	<string name="toolbar_wifi">Wi-Fi</string>
 	<string name="toolbar_launcher_settings">Ajustes del launcher</string>
 	<string name="toolbar_settings">Ajustes del sistema</string>
+	<string name="toolbar_refresh">Actualizar canales</string>
+
+	<!-- Refresh Channels Dialog -->
+	<string name="refresh_channels_title">¿Actualizar canales?</string>
+	<string name="refresh_channels_message">Se recargarán todas las tarjetas de canales de tus apps instaladas. Las tarjetas de aplicaciones no se verán afectadas.</string>
+	<string name="refresh_channels_confirm">Actualizar</string>
 	<string name="settings_channel">Ajustes de canales</string>
 	<string name="settings_channel_cards_per_row">Tarjetas por fila: %1$d</string>
 	<string name="settings_channel_cards_per_row_description">Limitar tarjetas por canal (3–20)</string>

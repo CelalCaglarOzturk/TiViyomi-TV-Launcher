@@ -118,7 +118,7 @@ fun ToolbarPlacementSettingsDialog(
 }
 
 private enum class ToolbarItem {
-    CLOCK, INPUTS, NOTIFICATIONS, WIFI, LAUNCHER_SETTINGS, SETTINGS
+    CLOCK, INPUTS, NOTIFICATIONS, WIFI, REFRESH, LAUNCHER_SETTINGS, SETTINGS
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -250,6 +250,7 @@ private fun getItemDisplayName(item: ToolbarItem): String {
         ToolbarItem.INPUTS -> stringResource(R.string.toolbar_inputs)
         ToolbarItem.NOTIFICATIONS -> stringResource(R.string.toolbar_notifications)
         ToolbarItem.WIFI -> stringResource(R.string.toolbar_wifi)
+        ToolbarItem.REFRESH -> stringResource(R.string.toolbar_refresh)
         ToolbarItem.LAUNCHER_SETTINGS -> stringResource(R.string.toolbar_launcher_settings)
         ToolbarItem.SETTINGS -> stringResource(R.string.toolbar_settings)
     }

@@ -89,6 +89,12 @@
 	<string name="toolbar_wifi">WLAN</string>
 	<string name="toolbar_launcher_settings">Launcher-Einstellungen</string>
 	<string name="toolbar_settings">Systemeinstellungen</string>
+	<string name="toolbar_refresh">Kanäle aktualisieren</string>
+
+	<!-- Refresh Channels Dialog -->
+	<string name="refresh_channels_title">Kanäle aktualisieren?</string>
+	<string name="refresh_channels_message">Alle Kanal-Karten werden aus deinen installierten Apps neu geladen. App-Karten sind nicht betroffen.</string>
+	<string name="refresh_channels_confirm">Aktualisieren</string>
 	<string name="settings_channel">Kanaleinstellungen</string>
 	<string name="settings_channel_cards_per_row">Karten pro Reihe: %1$d</string>
 	<string name="settings_channel_cards_per_row_description">Angezeigte Karten pro Kanal begrenzen (3–20)</string>

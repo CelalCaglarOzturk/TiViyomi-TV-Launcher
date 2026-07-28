@@ -89,6 +89,12 @@
 	<string name="toolbar_wifi">Wi-Fi</string>
 	<string name="toolbar_launcher_settings">Pengaturan Peluncur</string>
 	<string name="toolbar_settings">Pengaturan Sistem</string>
+	<string name="toolbar_refresh">Segarkan Saluran</string>
+
+	<!-- Refresh Channels Dialog -->
+	<string name="refresh_channels_title">Segarkan Saluran?</string>
+	<string name="refresh_channels_message">Semua kartu saluran akan dimuat ulang dari aplikasi yang terpasang. Kartu aplikasi tidak akan terpengaruh.</string>
+	<string name="refresh_channels_confirm">Segarkan</string>
 	<string name="settings_channel">Pengaturan Saluran</string>
 	<string name="settings_channel_cards_per_row">Kartu per Baris: %1$d</string>
 	<string name="settings_channel_cards_per_row_description">Batasi kartu yang ditampilkan per saluran untuk meningkatkan kinerja (3–20)</string>

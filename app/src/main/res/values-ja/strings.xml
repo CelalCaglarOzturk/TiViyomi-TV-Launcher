@@ -89,6 +89,12 @@
 	<string name="toolbar_wifi">Wi-Fi</string>
 	<string name="toolbar_launcher_settings">ランチャー設定</string>
 	<string name="toolbar_settings">システム設定</string>
+	<string name="toolbar_refresh">チャンネルを更新</string>
+
+	<!-- Refresh Channels Dialog -->
+	<string name="refresh_channels_title">チャンネルを更新しますか？</string>
+	<string name="refresh_channels_message">インストール済みアプリからすべてのチャンネルカードが再読み込みされます。アプリカードは影響を受けません。</string>
+	<string name="refresh_channels_confirm">更新</string>
 	<string name="settings_channel">チャンネル設定</string>
 	<string name="settings_channel_cards_per_row">行あたりのカード数: %1$d</string>
 	<string name="settings_channel_cards_per_row_description">パフォーマンスを向上させるためチャンネルあたりの表示カード数を制限 (3–20)</string>

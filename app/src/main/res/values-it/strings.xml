@@ -89,6 +89,12 @@
 	<string name="toolbar_wifi">Wi-Fi</string>
 	<string name="toolbar_launcher_settings">Impostazioni Launcher</string>
 	<string name="toolbar_settings">Impostazioni sistema</string>
+	<string name="toolbar_refresh">Aggiorna canali</string>
+
+	<!-- Refresh Channels Dialog -->
+	<string name="refresh_channels_title">Aggiornare i canali?</string>
+	<string name="refresh_channels_message">Tutte le schede dei canali verranno ricaricate dalle app installate. Le schede delle applicazioni non saranno interessate.</string>
+	<string name="refresh_channels_confirm">Aggiorna</string>
 	<string name="settings_channel">Impostazioni canali</string>
 	<string name="settings_channel_cards_per_row">Schede per riga: %1$d</string>
 	<string name="settings_channel_cards_per_row_description">Limita le schede visualizzate per canale per migliorare le prestazioni (3–20)</string>

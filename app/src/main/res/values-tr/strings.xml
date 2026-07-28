@@ -89,6 +89,12 @@
 	<string name="toolbar_wifi">Wi-Fi</string>
 	<string name="toolbar_launcher_settings">Başlatıcı Ayarları</string>
 	<string name="toolbar_settings">Sistem Ayarları</string>
+	<string name="toolbar_refresh">Kanalları Yenile</string>
+
+	<!-- Refresh Channels Dialog -->
+	<string name="refresh_channels_title">Kanallar Yenilensin mi?</string>
+	<string name="refresh_channels_message">Tüm kanal kartları yüklü uygulamalardan yeniden yüklenecek. Uygulama kartları etkilenmeyecek.</string>
+	<string name="refresh_channels_confirm">Yenile</string>
 	<string name="settings_channel">Kanal Ayarları</string>
 	<string name="settings_channel_cards_per_row">Satır Başına Kart: %1$d</string>
 	<string name="settings_channel_cards_per_row_description">Performansı artırmak için kanal başına görüntülenen kart sayısını sınırla (3–20)</string>

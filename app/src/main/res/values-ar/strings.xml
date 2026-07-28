@@ -89,6 +89,12 @@
 	<string name="toolbar_wifi">واي فاي</string>
 	<string name="toolbar_launcher_settings">إعدادات المُطلق</string>
 	<string name="toolbar_settings">إعدادات النظام</string>
+	<string name="toolbar_refresh">تحديث القنوات</string>
+
+	<!-- Refresh Channels Dialog -->
+	<string name="refresh_channels_title">تحديث القنوات؟</string>
+	<string name="refresh_channels_message">سيتم إعادة تحميل جميع بطاقات القنوات من تطبيقاتك المثبتة. لن تتأثر بطاقات التطبيقات.</string>
+	<string name="refresh_channels_confirm">تحديث</string>
 	<string name="settings_channel">إعدادات القنوات</string>
 	<string name="settings_channel_cards_per_row">البطاقات في الصف: %1$d</string>
 	<string name="settings_channel_cards_per_row_description">تقييد البطاقات المعروضة لكل قناة لتحسين الأداء (3–20)</string>

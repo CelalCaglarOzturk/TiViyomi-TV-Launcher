@@ -131,6 +131,12 @@
 	<string name="toolbar_wifi">Wi-Fi</string>
 	<string name="toolbar_launcher_settings">Launcher Settings</string>
 	<string name="toolbar_settings">System Settings</string>
+	<string name="toolbar_refresh">Refresh Channels</string>
+
+	<!-- Refresh Channels Dialog -->
+	<string name="refresh_channels_title">Refresh Channels?</string>
+	<string name="refresh_channels_message">This will reload all channel cards from your installed apps. App cards will not be affected.</string>
+	<string name="refresh_channels_confirm">Refresh</string>
 
 	<!-- Channel Settings -->
 	<string name="settings_channel">Channel Settings</string>

@@ -89,6 +89,12 @@
 	<string name="toolbar_wifi">Wi-Fi</string>
 	<string name="toolbar_launcher_settings">Paramètres du lanceur</string>
 	<string name="toolbar_settings">Paramètres système</string>
+	<string name="toolbar_refresh">Actualiser les chaînes</string>
+
+	<!-- Refresh Channels Dialog -->
+	<string name="refresh_channels_title">Actualiser les chaînes\u00a0?</string>
+	<string name="refresh_channels_message">Toutes les cartes de chaînes seront rechargées depuis vos apps installées. Les cartes d\'applications ne seront pas affectées.</string>
+	<string name="refresh_channels_confirm">Actualiser</string>
 	<string name="settings_channel">Paramètres des chaînes</string>
 	<string name="settings_channel_cards_per_row">Cartes par rangée: %1$d</string>
 	<string name="settings_channel_cards_per_row_description">Limiter les cartes affichées par chaîne pour améliorer les performances (3–20)</string>

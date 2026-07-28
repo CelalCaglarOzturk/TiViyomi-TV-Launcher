@@ -89,6 +89,12 @@
 	<string name="toolbar_wifi">Wi-Fi</string>
 	<string name="toolbar_launcher_settings">Настройки лаунчера</string>
 	<string name="toolbar_settings">Системные настройки</string>
+	<string name="toolbar_refresh">Обновить каналы</string>
+
+	<!-- Refresh Channels Dialog -->
+	<string name="refresh_channels_title">Обновить каналы?</string>
+	<string name="refresh_channels_message">Все карточки каналов будут перезагружены из установленных приложений. Карточки приложений не будут затронуты.</string>
+	<string name="refresh_channels_confirm">Обновить</string>
 	<string name="settings_channel">Настройки каналов</string>
 	<string name="settings_channel_cards_per_row">Карточек в ряду: %1$d</string>
 	<string name="settings_channel_cards_per_row_description">Ограничить количество карточек на канал для улучшения производительности (3–20)</string>

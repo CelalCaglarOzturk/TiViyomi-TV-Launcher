@@ -89,6 +89,12 @@
 	<string name="toolbar_wifi">Wi-Fi</string>
 	<string name="toolbar_launcher_settings">启动器设置</string>
 	<string name="toolbar_settings">系统设置</string>
+	<string name="toolbar_refresh">刷新频道</string>
+
+	<!-- Refresh Channels Dialog -->
+	<string name="refresh_channels_title">刷新频道？</string>
+	<string name="refresh_channels_message">将从已安装的应用重新加载所有频道卡片。应用卡片不受影响。</string>
+	<string name="refresh_channels_confirm">刷新</string>
 	<string name="settings_channel">频道设置</string>
 	<string name="settings_channel_cards_per_row">每行卡片数: %1$d</string>
 	<string name="settings_channel_cards_per_row_description">限制每个频道显示的卡片数量以提高性能 (3–20)</string>

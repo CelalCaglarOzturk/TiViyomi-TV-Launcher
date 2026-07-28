@@ -89,6 +89,12 @@
 	<string name="toolbar_wifi">वाई-फाई</string>
 	<string name="toolbar_launcher_settings">लॉन्चर सेटिंग्स</string>
 	<string name="toolbar_settings">सिस्टम सेटिंग्स</string>
+	<string name="toolbar_refresh">चैनल रीफ्रेश करें</string>
+
+	<!-- Refresh Channels Dialog -->
+	<string name="refresh_channels_title">चैनल रीफ्रेश करें?</string>
+	<string name="refresh_channels_message">इंस्टॉल किए गए ऐप्स से सभी चैनल कार्ड फिर से लोड होंगे। ऐप कार्ड प्रभावित नहीं होंगे।</string>
+	<string name="refresh_channels_confirm">रीफ्रेश करें</string>
 	<string name="settings_channel">चैनल सेटिंग्स</string>
 	<string name="settings_channel_cards_per_row">प्रति पंक्ति कार्ड: %1$d</string>
 	<string name="settings_channel_cards_per_row_description">प्रदर्शन बेहतर करने के लिए प्रति चैनल दिखाए गए कार्ड सीमित करें (3–20)</string>
