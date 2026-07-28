@@ -76,6 +76,8 @@ fun HomeTab(
     // Use lifecycle-aware collection for better performance
     val apps by viewModel.apps.collectAsStateWithLifecycle()
     val appsMap by viewModel.appsMap.collectAsStateWithLifecycle()
+    val allAppsMap by viewModel.allAppsMap.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val channels by viewModel.channels.collectAsStateWithLifecycle()
     val allAppChannels by viewModel.allAppChannels.collectAsStateWithLifecycle()
     val appCardSize by viewModel.appCardSize.collectAsStateWithLifecycle()
@@ -184,8 +186,8 @@ fun HomeTab(
             contentType = { _, _ -> "channel_row" }
         ) { index, channel ->
             // Cache app lookup to avoid repeated filtering
-            val app = remember(channel.packageName, appsMap) {
-                appsMap[channel.packageName]
+            val app = remember(channel.packageName, allAppsMap) {
+                allAppsMap[channel.packageName]
             }
             val programs by remember(channel.id) {
                 viewModel.channelPrograms(channel.id)
@@ -203,18 +205,18 @@ fun HomeTab(
 
             if (shouldDisplay) {
                 // Memoize the title computation
-                val title = remember(isWatchNext, app?.displayName, channel.displayName) {
+                val title = remember(isWatchNext, app?.displayName, channel.displayName, channel.packageName) {
                     if (isWatchNext) {
                         null // Will use string resource
                     } else {
-                        app?.displayName to channel.displayName
+                        (app?.displayName ?: channel.packageName) to channel.displayName
                     }
                 }
 
                 val displayTitle = if (isWatchNext) {
                     stringResource(R.string.channel_watch_next)
                 } else {
-                    stringResource(R.string.channel_preview, title!!.first!!, title.second)
+                    stringResource(R.string.channel_preview, title!!.first, title.second)
                 }
 
                 // Memoize size values
@@ -338,8 +340,8 @@ fun HomeTab(
                             items = disabledChannels,
                             key = { _, channel -> "disabled_${channel.id}" }
                         ) { index, channel ->
-                            val app = remember(channel.packageName, appsMap) {
-                                appsMap[channel.packageName]
+                            val app = remember(channel.packageName, allAppsMap) {
+                                allAppsMap[channel.packageName]
                             }
 
                             val focusRequester = remember(channel.id) {

@@ -2,6 +2,9 @@ package dev.mudrock.tiviyomitvlauncher.data.repository
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import dev.mudrock.tiviyomitvlauncher.data.DatabaseContainer
 import dev.mudrock.tiviyomitvlauncher.data.executeAsListFlow
@@ -104,11 +107,27 @@ class ChannelRepository(
         )
     }
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     suspend fun refreshAllChannels() {
-        Timber.d("Refreshing all channels")
-        refreshWatchNextChannels()
-        refreshPreviewChannels()
-        Timber.d("All channels refreshed")
+        if (_isRefreshing.value) return
+        _isRefreshing.value = true
+        try {
+            Timber.d("Refreshing all channels")
+            withContext(Dispatchers.Main) {
+                try {
+                    coil.Coil.imageLoader(context).memoryCache?.clear()
+                } catch (e: Exception) {
+                    Timber.w(e, "Failed to clear Coil memory cache on refresh")
+                }
+            }
+            refreshWatchNextChannels()
+            refreshPreviewChannels()
+            Timber.d("All channels refreshed")
+        } finally {
+            _isRefreshing.value = false
+        }
     }
 
     suspend fun refreshPreviewChannels() {
