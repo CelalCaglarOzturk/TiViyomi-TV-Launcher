@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -43,8 +43,8 @@ fun WatchNextSettingsDialog(
         allApps.filter { app ->
             channelProviders.contains(app.packageName)
         }
-    }.collectAsState(initial = emptyList())
-    val blacklist by channelRepository.getWatchNextBlacklist().collectAsState(initial = emptyList())
+    }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val blacklist by channelRepository.getWatchNextBlacklist().collectAsStateWithLifecycle(initialValue = emptyList())
 
     Dialog(onDismissRequest = onDismissRequest) {
         Surface(

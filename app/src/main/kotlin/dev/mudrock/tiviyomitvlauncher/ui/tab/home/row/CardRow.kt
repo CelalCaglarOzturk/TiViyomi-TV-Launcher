@@ -19,7 +19,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,8 +51,8 @@ fun CardRow(
     content: LazyListScope.(childFocusRequester: FocusRequester) -> Unit,
 ) {
     val settingsRepository = koinInject<SettingsRepository>()
-    val enableAnimations by settingsRepository.enableAnimations.collectAsState(initial = true)
-    val animChannelRow by settingsRepository.animChannelRow.collectAsState(initial = true)
+    val enableAnimations by settingsRepository.enableAnimations.collectAsStateWithLifecycle()
+    val animChannelRow by settingsRepository.animChannelRow.collectAsStateWithLifecycle()
     val areRowAnimationsEnabled = enableAnimations && animChannelRow
 
     var isFocused by remember { mutableStateOf(false) }
@@ -106,6 +106,24 @@ fun CardRow(
         val canScrollBack by remember { derivedStateOf { state.canScrollBackward } }
         val canScrollForward by remember { derivedStateOf { state.canScrollForward } }
 
+        val leftFadeBrush = remember {
+            Brush.horizontalGradient(
+                colors = listOf(
+                    Color.Black.copy(alpha = 0.6f),
+                    Color.Transparent
+                )
+            )
+        }
+
+        val rightFadeBrush = remember {
+            Brush.horizontalGradient(
+                colors = listOf(
+                    Color.Transparent,
+                    Color.Black.copy(alpha = 0.6f)
+                )
+            )
+        }
+
         Box(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -129,14 +147,7 @@ fun CardRow(
                         .align(Alignment.CenterStart)
                         .height(height = baseHeight.coerceAtLeast(90.dp))
                         .fillMaxWidth(0.08f)
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color.Black.copy(alpha = 0.6f),
-                                    Color.Transparent
-                                )
-                            )
-                        )
+                        .background(leftFadeBrush)
                 )
             }
 
@@ -146,14 +157,7 @@ fun CardRow(
                         .align(Alignment.CenterEnd)
                         .height(height = baseHeight.coerceAtLeast(90.dp))
                         .fillMaxWidth(0.08f)
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    Color.Black.copy(alpha = 0.6f)
-                                )
-                            )
-                        )
+                        .background(rightFadeBrush)
                 )
             }
         }

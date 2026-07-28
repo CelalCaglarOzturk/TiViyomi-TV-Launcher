@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -59,7 +59,7 @@ fun ChannelProgramCard(
 ) {
     val context = LocalContext.current
     val settingsRepository = koinInject<SettingsRepository>()
-    val enableAnimations by settingsRepository.enableAnimations.collectAsState(initial = true)
+    val enableAnimations by settingsRepository.enableAnimations.collectAsStateWithLifecycle()
 
     // Stable interaction source - remember without keys since it's per-composition
     val interactionSource = remember { MutableInteractionSource() }
@@ -120,6 +120,13 @@ fun ChannelProgramCard(
         }
     }
 
+    val highlightColors = remember {
+        listOf(
+            Color.White.copy(alpha = 0.3f),
+            Color.White.copy(alpha = 0.0f)
+        )
+    }
+
     StandardCardContainer(
         modifier = modifier.width(cardWidth),
         interactionSource = interactionSource,
@@ -159,10 +166,7 @@ fun ChannelProgramCard(
                             Modifier.drawBehind {
                                 drawRect(
                                     brush = Brush.radialGradient(
-                                        colors = listOf(
-                                            Color.White.copy(alpha = 0.3f),
-                                            Color.White.copy(alpha = 0.0f)
-                                        ),
+                                        colors = highlightColors,
                                         radius = size.maxDimension * 0.8f
                                     )
                                 )

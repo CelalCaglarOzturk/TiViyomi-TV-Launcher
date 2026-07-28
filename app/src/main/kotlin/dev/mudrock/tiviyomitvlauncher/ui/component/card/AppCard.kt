@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,8 +56,8 @@ fun AppCard(
 ) {
     val context = LocalContext.current
     val settingsRepository = koinInject<SettingsRepository>()
-    val enableAnimations by settingsRepository.enableAnimations.collectAsState(initial = true)
-    val animAppIcon by settingsRepository.animAppIcon.collectAsState(initial = true)
+    val enableAnimations by settingsRepository.enableAnimations.collectAsStateWithLifecycle()
+    val animAppIcon by settingsRepository.animAppIcon.collectAsStateWithLifecycle()
     val areAnimationsEnabled = enableAnimations && animAppIcon
 
     // Stable interaction source - remember without keys since it's per-composition
@@ -108,6 +108,13 @@ fun AppCard(
     
     val isFocused by interactionSource.collectIsFocusedAsState()
 
+    val highlightColors = remember {
+        listOf(
+            Color.White.copy(alpha = 0.3f),
+            Color.White.copy(alpha = 0.0f)
+        )
+    }
+
     PopupContainer(
         visible = menuVisible && hasPopupContent,
         onDismiss = { menuVisible = false },
@@ -132,10 +139,7 @@ fun AppCard(
                                     Modifier.drawBehind {
                                         drawRect(
                                             brush = Brush.radialGradient(
-                                                colors = listOf(
-                                                    Color.White.copy(alpha = 0.3f),
-                                                    Color.White.copy(alpha = 0.0f)
-                                                ),
+                                                colors = highlightColors,
                                                 radius = size.maxDimension * 0.8f
                                             )
                                         )

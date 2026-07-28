@@ -224,7 +224,7 @@ fun HomeTab(
                     focusRequesters.getOrPut(channel.id) { FocusRequester() }
                 }
 
-                LaunchedEffect(Unit) {
+                LaunchedEffect(focusedChannelId) {
                     if (focusedChannelId == channel.id) {
                         try {
                             focusRequester.requestFocus()
@@ -346,7 +346,7 @@ fun HomeTab(
                                 focusRequesters.getOrPut(channel.id) { FocusRequester() }
                             }
 
-                            LaunchedEffect(Unit) {
+                            LaunchedEffect(focusedChannelId) {
                                 if (focusedChannelId == channel.id) {
                                     try {
                                         focusRequester.requestFocus()
