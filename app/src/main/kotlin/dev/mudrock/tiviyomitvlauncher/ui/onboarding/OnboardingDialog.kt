@@ -1,9 +1,17 @@
 package dev.mudrock.tiviyomitvlauncher.ui.onboarding
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.core.net.toUri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.fadeIn
@@ -34,15 +42,17 @@ import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,6 +69,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.tv.material3.Button
 import androidx.tv.material3.ButtonDefaults
@@ -68,19 +79,67 @@ import androidx.tv.material3.OutlinedButton
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import dev.mudrock.tiviyomitvlauncher.R
+import dev.mudrock.tiviyomitvlauncher.accessibility.LauncherAccessibilityService
 import dev.mudrock.tiviyomitvlauncher.util.DefaultLauncherHelper
+
+private const val PERMISSION_READ_TV_LISTINGS = "android.permission.READ_TV_LISTINGS"
 
 @Composable
 fun OnboardingDialog(
     onDismiss: () -> Unit
 ) {
-    var currentPage by remember { mutableIntStateOf(0) }
+    val context = LocalContext.current
+    val onboardingManager = remember { OnboardingManager(context) }
+    var currentPage by remember { mutableIntStateOf(onboardingManager.getSavedPage()) }
     val pageCount = OnboardingPage.pages.size
     val isLastPage = currentPage == pageCount - 1
-    val context = LocalContext.current
     val defaultLauncherHelper = remember { DefaultLauncherHelper(context) }
     
     val nextButtonFocusRequester = remember { FocusRequester() }
+
+    // Dynamic Permission States
+    var isTvListingsGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, PERMISSION_READ_TV_LISTINGS) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    var isStorageGranted by remember {
+        mutableStateOf(checkStoragePermission(context))
+    }
+
+    var isAccessibilityGranted by remember {
+        mutableStateOf(checkAccessibilityServiceEnabled(context))
+    }
+
+    var isDefaultLauncherGranted by remember {
+        mutableStateOf(defaultLauncherHelper.isDefaultLauncher())
+    }
+
+    // Activity Result Launchers
+    val tvListingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        isTvListingsGranted = granted
+    }
+
+    val storagePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        isStorageGranted = checkStoragePermission(context)
+    }
+
+    val defaultLauncherPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { _ ->
+        isDefaultLauncherGranted = defaultLauncherHelper.isDefaultLauncher()
+    }
+
+    val accessibilitySettingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { _ ->
+        isAccessibilityGranted = checkAccessibilityServiceEnabled(context)
+    }
 
     // Intercept physical remote back button
     BackHandler {
@@ -91,8 +150,14 @@ fun OnboardingDialog(
         }
     }
 
-    // Auto-focus primary action button on page change for instant DPAD control
+    // Auto-focus primary action button on page change & save progress
     LaunchedEffect(currentPage) {
+        onboardingManager.setSavedPage(currentPage)
+        isTvListingsGranted = ContextCompat.checkSelfPermission(context, PERMISSION_READ_TV_LISTINGS) == PackageManager.PERMISSION_GRANTED
+        isStorageGranted = checkStoragePermission(context)
+        isAccessibilityGranted = checkAccessibilityServiceEnabled(context)
+        isDefaultLauncherGranted = defaultLauncherHelper.isDefaultLauncher()
+
         try {
             nextButtonFocusRequester.requestFocus()
         } catch (e: Exception) {
@@ -118,7 +183,7 @@ fun OnboardingDialog(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 48.dp, vertical = 28.dp),
+                .padding(horizontal = 44.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             // Top Header Bar
@@ -135,7 +200,7 @@ fun OnboardingDialog(
                         painter = painterResource(R.drawable.ic_launcher_foreground),
                         contentDescription = null,
                         modifier = Modifier
-                            .size(42.dp)
+                            .size(40.dp)
                             .background(Color(0xFF312E81), CircleShape)
                             .padding(4.dp)
                     )
@@ -148,7 +213,7 @@ fun OnboardingDialog(
                             )
                         )
                         Text(
-                            text = "Comprehensive Setup & Capabilities Walkthrough",
+                            text = "Capabilities & Permissions Walkthrough",
                             style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFF94A3B8))
                         )
                     }
@@ -178,25 +243,25 @@ fun OnboardingDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(vertical = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(36.dp),
+                    .padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left Column (40% Viewport Width): Visual Feature Showcase & Indicators
+                // Left Column (38% Viewport Width): Visual Feature Showcase & Indicators
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     colors = androidx.tv.material3.SurfaceDefaults.colors(
                         containerColor = Color(0xFF0F172A).copy(alpha = 0.9f)
                     ),
                     modifier = Modifier
-                        .weight(0.40f)
+                        .weight(0.38f)
                         .fillMaxHeight()
                         .border(1.dp, Color(0xFF334155), RoundedCornerShape(24.dp))
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(28.dp),
+                            .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -217,8 +282,8 @@ fun OnboardingDialog(
                         ) { page ->
                             Box(
                                 modifier = Modifier
-                                    .size(130.dp)
-                                    .clip(RoundedCornerShape(28.dp))
+                                    .size(120.dp)
+                                    .clip(RoundedCornerShape(24.dp))
                                     .background(
                                         Brush.linearGradient(
                                             listOf(page.accentColor, page.secondaryAccentColor)
@@ -230,7 +295,7 @@ fun OnboardingDialog(
                                     imageVector = page.icon,
                                     contentDescription = null,
                                     tint = Color.White,
-                                    modifier = Modifier.size(64.dp)
+                                    modifier = Modifier.size(60.dp)
                                 )
                             }
                         }
@@ -238,7 +303,7 @@ fun OnboardingDialog(
                         // Feature Badges specific to current step
                         Column(
                             horizontalAlignment = Alignment.Start,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             val page = OnboardingPage.pages[currentPage]
@@ -251,13 +316,14 @@ fun OnboardingDialog(
                                         imageVector = Icons.Default.CheckCircle,
                                         contentDescription = null,
                                         tint = page.accentColor,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(16.dp)
                                     )
                                     Text(
                                         text = highlight,
                                         style = MaterialTheme.typography.bodyMedium.copy(
                                             color = Color(0xFFE2E8F0),
-                                            fontWeight = FontWeight.Medium
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 13.sp
                                         )
                                     )
                                 }
@@ -286,22 +352,22 @@ fun OnboardingDialog(
                     }
                 }
 
-                // Right Column (60% Viewport Width): Title, Capabilities Detail & Live Action Prompts
+                // Right Column (62% Viewport Width): Title, Rationale, Permission Prompts & Warnings
                 Column(
                     modifier = Modifier
-                        .weight(0.60f)
+                        .weight(0.62f)
                         .fillMaxHeight()
                         .padding(horizontal = 8.dp),
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "CAPABILITY ${currentPage + 1} OF $pageCount",
+                        text = "STAGE ${currentPage + 1} OF $pageCount",
                         style = MaterialTheme.typography.labelMedium.copy(
                             color = Color(0xFF818CF8),
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         ),
-                        modifier = Modifier.padding(bottom = 6.dp)
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
 
                     AnimatedContent(
@@ -316,114 +382,174 @@ fun OnboardingDialog(
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color.White
                                 ),
-                                modifier = Modifier.padding(bottom = 12.dp)
+                                modifier = Modifier.padding(bottom = 8.dp)
                             )
 
                             Text(
                                 text = page.description,
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     color = Color(0xFF94A3B8),
-                                    lineHeight = 26.sp,
-                                    fontSize = 17.sp
+                                    lineHeight = 24.sp,
+                                    fontSize = 16.sp
                                 ),
-                                modifier = Modifier.padding(bottom = 20.dp)
+                                modifier = Modifier.padding(bottom = 14.dp)
                             )
                         }
                     }
 
-                    // Interactive Step Action Controls based on capability page
+                    // Interactive Permission Prompts & Warning Banners based on current stage
                     when (currentPage) {
-                        2 -> { // Step 3: Default Launcher & Accessibility setup
+                        0 -> { // Stage 1: Installed Apps Query Rationale
+                            InfoBanner(
+                                title = "Installed Apps Auto-Discovery (QUERY_ALL_PACKAGES)",
+                                message = "Android TV requires package query permission so the launcher can automatically detect all installed apps on your device and populate your launcher grid without remote telemetry."
+                            )
+                        }
+                        1 -> { // Stage 2: TV Listings Permission Prompt & Warning
                             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                ActionCard(
-                                    title = "Set as Default Home Launcher",
-                                    subtitle = if (defaultLauncherHelper.isDefaultLauncher()) "Currently set as default launcher" else "Prompt Android TV home application selection",
-                                    buttonText = "Set Default",
-                                    isDone = defaultLauncherHelper.isDefaultLauncher(),
+                                PermissionActionCard(
+                                    title = "TV Listings Permission (READ_TV_LISTINGS)",
+                                    rationale = "Allows TiViyomi to fetch live recommendations, Watch Next feeds, and media channels from streaming apps like YouTube and Netflix.",
+                                    isGranted = isTvListingsGranted,
+                                    buttonText = "Grant TV Listings Permission",
                                     onClick = {
-                                        defaultLauncherHelper.requestDefaultLauncherIntent()?.let { intent ->
-                                            context.startActivity(intent)
+                                        tvListingsLauncher.launch(PERMISSION_READ_TV_LISTINGS)
+                                    }
+                                )
+
+                                if (!isTvListingsGranted) {
+                                    WarningBanner(
+                                        title = "Warning: TV Channels Disabled",
+                                        message = "If denied, the launcher will be unable to read channel recommendations or Watch Next programs from installed apps, keeping channel rows empty."
+                                    )
+                                }
+                            }
+                        }
+                        2 -> { // Stage 3: Default Launcher & Accessibility Interceptor
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                PermissionActionCard(
+                                    title = "Default Home Launcher Role",
+                                    rationale = "Ensures your device starts directly into TiViyomi TV Launcher when powered on.",
+                                    isGranted = isDefaultLauncherGranted,
+                                    buttonText = "Set Default Launcher",
+                                    onClick = {
+                                        var launched = false
+                                        val roleIntent = defaultLauncherHelper.requestDefaultLauncherIntent()
+                                        if (roleIntent != null) {
+                                            try {
+                                                defaultLauncherPickerLauncher.launch(roleIntent)
+                                                launched = true
+                                            } catch (e: Exception) {
+                                                // RoleManager intent failed
+                                            }
+                                        }
+                                        if (!launched) {
+                                            try {
+                                                defaultLauncherPickerLauncher.launch(Intent(Settings.ACTION_HOME_SETTINGS))
+                                                launched = true
+                                            } catch (e: Exception) {
+                                                // Home settings failed
+                                            }
+                                        }
+                                        if (!launched) {
+                                            try {
+                                                val homeChooserIntent = Intent(Intent.ACTION_MAIN).apply {
+                                                    addCategory(Intent.CATEGORY_HOME)
+                                                    addCategory(Intent.CATEGORY_DEFAULT)
+                                                }
+                                                val chooser = Intent.createChooser(homeChooserIntent, "Select Home Launcher")
+                                                defaultLauncherPickerLauncher.launch(chooser)
+                                            } catch (e: Exception) {
+                                                try {
+                                                    defaultLauncherPickerLauncher.launch(Intent(Settings.ACTION_SETTINGS))
+                                                } catch (e2: Exception) {
+                                                    // Settings failed
+                                                }
+                                            }
                                         }
                                     }
                                 )
-                                ActionCard(
-                                    title = "Home Key Accessibility Interceptor",
-                                    subtitle = "Allows launcher to catch Home key when leaving external apps",
-                                    buttonText = "Open Accessibility",
-                                    isDone = false,
+
+                                PermissionActionCard(
+                                    title = "Home Button Accessibility Interceptor",
+                                    rationale = "Catches physical Home key presses on your remote when returning from external apps like Netflix or YouTube.",
+                                    isGranted = isAccessibilityGranted,
+                                    buttonText = "Open Accessibility Settings",
                                     onClick = {
+                                        val intents = listOf(
+                                            Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS),
+                                            Intent("android.settings.ACCESSIBILITY_SETTINGS"),
+                                            Intent(Settings.ACTION_SETTINGS)
+                                        )
+                                        for (intent in intents) {
+                                            try {
+                                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                context.startActivity(intent)
+                                                break
+                                            } catch (e: Exception) {
+                                                // Try next fallback
+                                            }
+                                        }
+                                    }
+                                )
+
+                                if (!isAccessibilityGranted) {
+                                    WarningBanner(
+                                        title = "Warning: Home Key Bypass Risk",
+                                        message = "Without Accessibility service enabled, pressing the Home button inside third-party apps may exit to the manufacturer's stock launcher instead of TiViyomi."
+                                    )
+                                }
+                            }
+                        }
+                        3 -> { // Stage 4: Personalization & Media Read Access Rationale
+                            InfoBanner(
+                                title = "Wallpaper Storage Rationale (READ_EXTERNAL_STORAGE)",
+                                message = "Selecting custom background wallpaper images requires read access to image files stored on your TV storage. Preset background colors do not require any permission."
+                            )
+                        }
+                        4 -> { // Stage 5: Quick Controls & TV Input Manager
+                            InfoBanner(
+                                title = "HDMI TV Input Manager Rationale",
+                                message = "Input switching utilizes Android TV's built-in TvInputManager framework to detect connected HDMI 1, HDMI 2, and AV sources without accessing private hardware signals."
+                            )
+                        }
+                        5 -> { // Stage 6: Storage Access for Backups Prompt & Warning
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                PermissionActionCard(
+                                    title = "All Files Storage Access (MANAGE_EXTERNAL_STORAGE)",
+                                    rationale = "Required to write and read layout backup JSON files at Documents/TVLauncher/tv_launcher_backup.json.",
+                                    isGranted = isStorageGranted,
+                                    buttonText = "Grant Storage Permission",
+                                    onClick = {
+                                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                            data = "package:${context.packageName}".toUri()
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        }
                                         try {
-                                            context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                                            context.startActivity(intent)
                                         } catch (e: Exception) {
-                                            context.startActivity(Intent(Settings.ACTION_SETTINGS))
+                                            try {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                                    context.startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION).apply {
+                                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                    })
+                                                } else {
+                                                    storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                                                }
+                                            } catch (e2: Exception) {
+                                                context.startActivity(Intent(Settings.ACTION_SETTINGS).apply {
+                                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                })
+                                            }
                                         }
                                     }
                                 )
-                            }
-                        }
-                        3 -> { // Step 4: Appearance & Animations Preview
-                            Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                colors = androidx.tv.material3.SurfaceDefaults.colors(
-                                    containerColor = Color(0xFF1E293B)
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceAround,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    CapabilityPill(icon = Icons.Default.Palette, label = "Custom Wallpaper & Color Presets")
-                                    CapabilityPill(icon = Icons.Default.TouchApp, label = "App & Channel Card Resizing")
-                                }
-                            }
-                        }
-                        4 -> { // Step 5: Toolbar & Inputs Preview
-                            Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                colors = androidx.tv.material3.SurfaceDefaults.colors(
-                                    containerColor = Color(0xFF1E293B)
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceAround,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    CapabilityPill(icon = Icons.AutoMirrored.Filled.Input, label = "HDMI 1/2 Input Switcher")
-                                    CapabilityPill(icon = Icons.Default.Settings, label = "Reorderable Top Toolbar")
-                                }
-                            }
-                        }
-                        5 -> { // Step 6: Backup & Safety
-                            Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                colors = androidx.tv.material3.SurfaceDefaults.colors(
-                                    containerColor = Color(0xFF1E293B)
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceAround,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    CapabilityPill(icon = Icons.Default.Backup, label = "JSON Storage Backup")
-                                    CapabilityPill(icon = Icons.Default.Security, label = "Automatic Crash Recovery")
+
+                                if (!isStorageGranted) {
+                                    WarningBanner(
+                                        title = "Warning: Backup Feature Disabled",
+                                        message = "Without storage permission, saving layout backups or restoring preferences from previous backup files will fail."
+                                    )
                                 }
                             }
                         }
@@ -437,7 +563,7 @@ fun OnboardingDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left: Back button
+                // Left: Previous Step button
                 if (currentPage > 0) {
                     OutlinedButton(
                         onClick = { currentPage-- },
@@ -504,7 +630,7 @@ fun OnboardingDialog(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null)
-                                Text("Complete Setup & Start")
+                                Text("Complete Setup & Start Launcher")
                             }
                         }
                     }
@@ -515,11 +641,11 @@ fun OnboardingDialog(
 }
 
 @Composable
-private fun ActionCard(
+private fun PermissionActionCard(
     title: String,
-    subtitle: String,
+    rationale: String,
+    isGranted: Boolean,
     buttonText: String,
-    isDone: Boolean,
     onClick: () -> Unit
 ) {
     Surface(
@@ -529,7 +655,11 @@ private fun ActionCard(
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color(0xFF334155), RoundedCornerShape(14.dp))
+            .border(
+                1.dp,
+                if (isGranted) Color(0xFF10B981) else Color(0xFFF59E0B),
+                RoundedCornerShape(14.dp)
+            )
     ) {
         Row(
             modifier = Modifier
@@ -539,6 +669,135 @@ private fun ActionCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        colors = androidx.tv.material3.SurfaceDefaults.colors(
+                            containerColor = if (isGranted) Color(0xFF065F46) else Color(0xFF78350F)
+                        )
+                    ) {
+                        Text(
+                            text = if (isGranted) "GRANTED" else "ACTION REQUIRED",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = if (isGranted) Color(0xFF34D399) else Color(0xFFFBBF24),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            ),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = rationale,
+                    style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF94A3B8)),
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+
+            if (!isGranted) {
+                Button(
+                    onClick = onClick,
+                    colors = ButtonDefaults.colors(
+                        containerColor = Color(0xFF4F46E5),
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier.padding(start = 12.dp)
+                ) {
+                    Text(buttonText)
+                }
+            } else {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF10B981),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WarningBanner(
+    title: String,
+    message: String
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        colors = androidx.tv.material3.SurfaceDefaults.colors(
+            containerColor = Color(0xFF451A03).copy(alpha = 0.65f)
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, Color(0xFFF59E0B), RoundedCornerShape(12.dp))
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = null,
+                tint = Color(0xFFFBBF24),
+                modifier = Modifier.size(22.dp)
+            )
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        color = Color(0xFFFDE68A),
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = Color(0xFFFEF3C7),
+                        lineHeight = 16.sp
+                    )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoBanner(
+    title: String,
+    message: String
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        colors = androidx.tv.material3.SurfaceDefaults.colors(
+            containerColor = Color(0xFF1E293B)
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, Color(0xFF334155), RoundedCornerShape(12.dp))
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = null,
+                tint = Color(0xFF818CF8),
+                modifier = Modifier.size(22.dp)
+            )
+            Column {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleSmall.copy(
@@ -547,55 +806,35 @@ private fun ActionCard(
                     )
                 )
                 Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall.copy(color = Color(0xFF94A3B8))
-                )
-            }
-
-            if (!isDone) {
-                Button(
-                    onClick = onClick,
-                    colors = ButtonDefaults.colors(
-                        containerColor = Color(0xFF4F46E5),
-                        contentColor = Color.White
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = Color(0xFF94A3B8),
+                        lineHeight = 16.sp
                     )
-                ) {
-                    Text(buttonText)
-                }
-            } else {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    tint = Color(0xFF10B981)
                 )
             }
         }
     }
 }
 
-@Composable
-private fun CapabilityPill(
-    icon: ImageVector,
-    label: String
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = Color(0xFFA5B4FC),
-            modifier = Modifier.size(20.dp)
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                color = Color.White,
-                fontWeight = FontWeight.Medium
-            )
-        )
+private fun checkStoragePermission(context: Context): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        Environment.isExternalStorageManager()
+    } else {
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        ) == PackageManager.PERMISSION_GRANTED
     }
+}
+
+private fun checkAccessibilityServiceEnabled(context: Context): Boolean {
+    val expectedService = "${context.packageName}/${LauncherAccessibilityService::class.java.canonicalName}"
+    val enabledServices = Settings.Secure.getString(
+        context.contentResolver,
+        Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+    ) ?: return false
+    return enabledServices.contains(expectedService) || enabledServices.contains(context.packageName)
 }
 
 data class OnboardingPage(
@@ -609,7 +848,7 @@ data class OnboardingPage(
 ) {
     companion object {
         val pages = listOf(
-            // Page 1: Overview
+            // Stage 1: Overview
             OnboardingPage(
                 categoryBadge = "Core Philosophy",
                 icon = Icons.Default.Home,
@@ -623,7 +862,7 @@ data class OnboardingPage(
                     "Lightweight memory & CPU footprint"
                 )
             ),
-            // Page 2: Apps & Channels
+            // Stage 2: Apps & Channels
             OnboardingPage(
                 categoryBadge = "Apps & Feeds",
                 icon = Icons.Default.Apps,
@@ -637,7 +876,7 @@ data class OnboardingPage(
                     "Show non-TV mobile apps toggle"
                 )
             ),
-            // Page 3: System Interception
+            // Stage 3: System Interception
             OnboardingPage(
                 categoryBadge = "System Integration",
                 icon = Icons.Default.Tv,
@@ -651,7 +890,7 @@ data class OnboardingPage(
                     "Smooth transition back to home screen"
                 )
             ),
-            // Page 4: Visual Personalization
+            // Stage 4: Visual Personalization
             OnboardingPage(
                 categoryBadge = "Personalization",
                 icon = Icons.Default.Palette,
@@ -665,7 +904,7 @@ data class OnboardingPage(
                     "Granular control over focus animations"
                 )
             ),
-            // Page 5: Toolbar & Inputs
+            // Stage 5: Toolbar & Inputs
             OnboardingPage(
                 categoryBadge = "Quick Controls",
                 icon = Icons.AutoMirrored.Filled.Input,
@@ -679,7 +918,7 @@ data class OnboardingPage(
                     "One-tap channel list reloader"
                 )
             ),
-            // Page 6: Backup & Crash Recovery
+            // Stage 6: Backup & Crash Recovery
             OnboardingPage(
                 categoryBadge = "Data & Safety",
                 icon = Icons.Default.Backup,
@@ -703,6 +942,7 @@ class OnboardingManager(context: Context) {
     companion object {
         private const val PREFS_NAME = "onboarding"
         private const val KEY_COMPLETED = "completed"
+        private const val KEY_SAVED_PAGE = "saved_page"
     }
 
     fun isCompleted(): Boolean {
@@ -710,10 +950,21 @@ class OnboardingManager(context: Context) {
     }
 
     fun markCompleted() {
-        prefs.edit { putBoolean(KEY_COMPLETED, true) }
+        prefs.edit {
+            putBoolean(KEY_COMPLETED, true)
+            remove(KEY_SAVED_PAGE)
+        }
+    }
+
+    fun getSavedPage(): Int {
+        return prefs.getInt(KEY_SAVED_PAGE, 0)
+    }
+
+    fun setSavedPage(page: Int) {
+        prefs.edit { putInt(KEY_SAVED_PAGE, page) }
     }
 
     fun reset() {
-        prefs.edit { remove(KEY_COMPLETED) }
+        prefs.edit { clear() }
     }
 }

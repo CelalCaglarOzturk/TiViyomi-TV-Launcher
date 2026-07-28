@@ -85,7 +85,9 @@ class LauncherActivity : ComponentActivity() {
 			)
 		}
 
-		validateDefaultLauncher()
+		if (!showOnboarding) {
+			validateDefaultLauncher()
+		}
 
 		lifecycleScope.launch {
 			repeatOnLifecycle(Lifecycle.State.RESUMED) {
@@ -121,6 +123,11 @@ class LauncherActivity : ComponentActivity() {
 
 	override fun onResume() {
 		super.onResume()
+
+		// Do not auto-prompt permissions while onboarding is active
+		if (showOnboarding || !onboardingManager.isCompleted()) {
+			return
+		}
 
 		// Request missing permissions (excluding storage on Android 11+ which needs special handling)
 		val missingPermissions = PERMISSIONS
