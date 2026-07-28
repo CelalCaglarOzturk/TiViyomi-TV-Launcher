@@ -2,6 +2,9 @@ package dev.mudrock.tiviyomitvlauncher.data.repository
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -110,8 +113,8 @@ class ChannelRepository(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-    suspend fun refreshAllChannels() {
-        if (_isRefreshing.value) return
+    suspend fun refreshAllChannels() = withContext(Dispatchers.IO) {
+        if (_isRefreshing.value) return@withContext
         _isRefreshing.value = true
         try {
             Timber.d("Refreshing all channels")
@@ -124,9 +127,41 @@ class ChannelRepository(
             }
             refreshWatchNextChannels()
             refreshPreviewChannels()
+
+            // Preload images for all program cards into Coil memory/disk cache before stopping refresh spinner
+            preloadAllProgramImages()
             Timber.d("All channels refreshed")
         } finally {
             _isRefreshing.value = false
+        }
+    }
+
+    private suspend fun preloadAllProgramImages() = withContext(Dispatchers.IO) {
+        try {
+            val allPrograms = database.channelPrograms.getAll().executeAsList()
+            val imageLoader = coil.Coil.imageLoader(context)
+
+            coroutineScope {
+                allPrograms.filter { !it.posterArtUri.isNullOrEmpty() }.chunked(6).forEach { batch ->
+                    batch.map { program ->
+                        async {
+                            try {
+                                val uri = program.posterArtUri!!
+                                val request = coil.request.ImageRequest.Builder(context)
+                                    .data(uri)
+                                    .memoryCacheKey("program:${program.id}:$uri")
+                                    .diskCacheKey("program:${program.id}:$uri")
+                                    .build()
+                                imageLoader.execute(request)
+                            } catch (e: Exception) {
+                                // Ignore individual image load failures during preload
+                            }
+                        }
+                    }.awaitAll()
+                }
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to preload program images")
         }
     }
 

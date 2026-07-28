@@ -69,6 +69,18 @@ class LauncherApplication : Application(), ImageLoaderFactory {
     }
 
     override fun newImageLoader() = ImageLoader.Builder(this)
+        .memoryCache {
+            coil.memory.MemoryCache.Builder(this)
+                .maxSizePercent(0.35)
+                .strongReferencesEnabled(true)
+                .build()
+        }
+        .diskCache {
+            coil.disk.DiskCache.Builder()
+                .directory(cacheDir.resolve("image_cache"))
+                .maxSizeBytes(100L * 1024 * 1024)
+                .build()
+        }
         .components {
             // Register keyer for proper cache key generation
             add(AppIconFetcher.AppKeyer())
