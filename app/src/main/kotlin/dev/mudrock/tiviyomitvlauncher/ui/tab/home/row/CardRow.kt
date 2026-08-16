@@ -79,8 +79,7 @@ fun CardRow(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .dpadRepeatThrottle(horizontalGateMs = 70L)
-                    .focusRestorer(childFocusRequester),
+                    .dpadRepeatThrottle(horizontalGateMs = 70L),
             ) {
                 content(childFocusRequester)
             }

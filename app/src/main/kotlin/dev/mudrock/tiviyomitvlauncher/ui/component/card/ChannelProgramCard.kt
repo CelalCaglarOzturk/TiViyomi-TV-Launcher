@@ -50,6 +50,8 @@ import dev.mudrock.tiviyomitvlauncher.ui.component.FocusMarqueeText
 
 import org.koin.compose.koinInject
 
+import androidx.compose.ui.zIndex
+
 @Composable
 fun ChannelProgramCard(
     program: ChannelProgram,
@@ -122,6 +124,8 @@ fun ChannelProgramCard(
         }
     }
 
+    val focusedBorderStroke = remember { BorderStroke(3.dp, Color.White) }
+
     Column(
         modifier = modifier.width(cardWidth)
     ) {
@@ -132,14 +136,15 @@ fun ChannelProgramCard(
             interactionSource = interactionSource,
             colors = CardDefaults.colors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
             ),
             border = CardDefaults.border(
                 focusedBorder = Border(
-                    border = BorderStroke(3.dp, Color.White),
+                    border = focusedBorderStroke,
                 )
             ),
             scale = CardDefaults.scale(
-                focusedScale = if (enableAnimations) 1.05f else 1.0f
+                focusedScale = 1.0f
             ),
             onClick = {
                 launchIntent?.let { intent ->

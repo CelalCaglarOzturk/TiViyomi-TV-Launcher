@@ -63,10 +63,20 @@ import dev.mudrock.tiviyomitvlauncher.ui.tab.home.row.ChannelProgramCardRow
 import dev.mudrock.tiviyomitvlauncher.util.FocusController
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
-
 import dev.mudrock.tiviyomitvlauncher.ui.util.dpadVerticalFastScroll
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import coil.Coil
+import coil.request.ImageRequest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class, kotlinx.coroutines.FlowPreview::class)
 @Composable
 fun HomeTab(
     modifier: Modifier = Modifier,
@@ -119,6 +129,9 @@ fun HomeTab(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
+    // Cache LazyListState for each horizontal row to prevent recreation when scrolling vertically
+    val rowListStates = remember { mutableMapOf<String, LazyListState>() }
+
     // Stable focus requester that persists across recompositions
     val firstItemFocusRequester = remember { FocusRequester() }
 
@@ -127,6 +140,48 @@ fun HomeTab(
 
     // Map for focus requesters
     val focusRequesters = remember { mutableMapOf<String, FocusRequester>() }
+
+    // Prefetch next row's program images asynchronously on IO dispatcher
+    val context = LocalContext.current
+    val density = LocalDensity.current
+    val latestChannelRows = rememberUpdatedState(channelRows)
+
+    LaunchedEffect(listState, channelCardSize, density) {
+        val channelHeight = channelCardSize.dp
+        val channelWidth = channelHeight * (16f / 9f)
+        val wPx = with(density) { channelWidth.roundToPx() }
+        val hPx = with(density) { channelHeight.roundToPx() }
+
+        snapshotFlow {
+            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+        }
+            .distinctUntilChanged()
+            .debounce(120L)
+            .collect { lastVisibleIndex ->
+                withContext(Dispatchers.IO) {
+                    val rows = latestChannelRows.value
+                    // Index 0 is Apps row, channel rows start at index 1
+                    val channelRowIdx = lastVisibleIndex
+                    if (channelRowIdx in rows.indices) {
+                        val nextRow = rows[channelRowIdx]
+                        val imageLoader = Coil.imageLoader(context)
+                        for (program in nextRow.programs.take(6)) {
+                            val uri = program.posterArtUri ?: continue
+                            val cacheKey = "program:${program.id}:${uri}_${wPx}x${hPx}"
+                            if (imageLoader.memoryCache?.get(coil.memory.MemoryCache.Key(cacheKey)) != null) continue
+                            imageLoader.enqueue(
+                                ImageRequest.Builder(context)
+                                    .data(uri)
+                                    .memoryCacheKey(cacheKey)
+                                    .diskCacheKey(cacheKey)
+                                    .size(wPx, hPx)
+                                    .build()
+                            )
+                        }
+                    }
+                }
+            }
+    }
 
     // Restore focus to the channel that was being toggled
     LaunchedEffect(focusedChannelId, enabledChannels, disabledChannels) {
@@ -180,7 +235,6 @@ fun HomeTab(
                         }
                     }
                 }
-                .focusRestorer(firstItemFocusRequester)
         ) {
             item(
                 key = "apps",
@@ -265,6 +319,7 @@ fun HomeTab(
                 programs = rowData.programs,
                 channel = channel,
                 baseHeight = channelCardSize.dp,
+                state = rowListStates.getOrPut(rowData.channel.id) { LazyListState() },
                 onToggleEnabled = onToggleEnabled,
                 onMoveUp = onMoveUp,
                 onMoveDown = onMoveDown,

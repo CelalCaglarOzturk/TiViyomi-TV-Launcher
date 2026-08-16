@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -65,6 +66,7 @@ fun ChannelProgramCardRow(
     programs: List<ChannelProgram>,
     channel: Channel? = null,
     baseHeight: Dp = 90.dp,
+    state: LazyListState = rememberLazyListState(),
     onToggleEnabled: ((enabled: Boolean) -> Unit)? = null,
     onMoveUp: (() -> Unit)? = null,
     onMoveDown: (() -> Unit)? = null,
@@ -114,9 +116,6 @@ fun ChannelProgramCardRow(
         focusRequesters.keys.retainAll(currentProgramIds)
     }
 
-    val childFocusRequester = remember { FocusRequester() }
-    val listState = rememberLazyListState()
-
     // Popup for channel options (non-watch-next channels)
     PopupContainer(
         visible = popupVisible && channel != null && onToggleEnabled != null,
@@ -152,7 +151,7 @@ fun ChannelProgramCardRow(
                             androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides dev.mudrock.tiviyomitvlauncher.ui.util.NuvioScrollDefaults.smoothScrollSpec
                         ) {
                             LazyRow(
-                                state = listState,
+                                state = state,
                                 contentPadding = PaddingValues(
                                     vertical = 4.dp,
                                     horizontal = 48.dp,
@@ -161,8 +160,7 @@ fun ChannelProgramCardRow(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .heightIn(min = baseHeight + 8.dp)
-                                    .dpadRepeatThrottle(horizontalGateMs = 70L)
-                                    .focusRestorer(childFocusRequester),
+                                    .dpadRepeatThrottle(horizontalGateMs = 70L),
                             ) {
                             itemsIndexed(
                                 items = limitedPrograms,
@@ -199,10 +197,6 @@ fun ChannelProgramCardRow(
                                         enableAnimations = areRowAnimationsEnabled,
                                         modifier = Modifier
                                             .focusRequester(programFocusRequester)
-                                            .then(
-                                                if (index == 0) Modifier.focusRequester(childFocusRequester)
-                                                else Modifier
-                                            )
                                             .onPreviewKeyEvent { event ->
                                                 // Consume KeyUp events when ignoreNextKeyUp is set (after exiting move mode)
                                                 if (ignoreNextKeyUp && event.type == KeyEventType.KeyUp) {

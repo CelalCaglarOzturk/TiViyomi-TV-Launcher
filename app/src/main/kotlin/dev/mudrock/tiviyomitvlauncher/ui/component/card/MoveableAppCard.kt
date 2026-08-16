@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.net.toUri
 import androidx.tv.material3.Border
 import androidx.tv.material3.Card
@@ -138,6 +139,13 @@ fun MoveableAppCard(
         }
     }
 
+    val focusedBorderStroke = remember(borderWidth, borderColor) {
+        BorderStroke(
+            borderWidth,
+            borderColor ?: Color.White
+        )
+    }
+
     PopupContainer(
         visible = menuVisible && !isInMoveMode,
         onDismiss = { menuVisible = false },
@@ -145,6 +153,7 @@ fun MoveableAppCard(
             Column(
                 modifier = modifier
                     .width(cardWidth)
+                    .zIndex(if (isFocused || isInMoveMode) 1f else 0f)
                     .onPreviewKeyEvent { event ->
                         if (ignoreNextKeyUp && event.type == KeyEventType.KeyUp) {
                             ignoreNextKeyUp = false
@@ -207,10 +216,7 @@ fun MoveableAppCard(
                     interactionSource = interactionSource,
                     border = CardDefaults.border(
                         focusedBorder = Border(
-                            border = BorderStroke(
-                                borderWidth,
-                                borderColor ?: Color.White
-                            ),
+                            border = focusedBorderStroke,
                         )
                     ),
                     scale = CardDefaults.scale(

@@ -47,6 +47,8 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
+        android:largeHeap="true"
+        android:hardwareAccelerated="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.TVLauncher"
     >
@@ -55,6 +57,8 @@
             android:excludeFromRecents="true"
             android:exported="true"
             android:launchMode="singleTask"
+            android:hardwareAccelerated="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density|uiMode|keyboard|keyboardHidden|navigation|layoutDirection|fontScale|locale"
             android:stateNotNeeded="true"
         >
 			<intent-filter>

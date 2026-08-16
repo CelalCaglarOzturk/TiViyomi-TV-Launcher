@@ -47,7 +47,11 @@ fun FocusMarqueeText(
         Text(
             text = text,
             modifier = if (focused) {
-                modifier.basicMarquee(iterations = Int.MAX_VALUE, velocity = MarqueeVelocity)
+                modifier.basicMarquee(
+                    iterations = Int.MAX_VALUE,
+                    velocity = MarqueeVelocity,
+                    initialDelayMillis = 1200
+                )
             } else {
                 modifier
             },

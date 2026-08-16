@@ -127,9 +127,6 @@ class LauncherApplication : Application(), ImageLoaderFactory, ComponentCallback
                 if (totalRamMb <= 2048) {
                     bitmapConfig(Bitmap.Config.RGB_565)
                 }
-                if (BuildConfig.DEBUG) {
-                    logger(DebugLogger())
-                }
             }
             // App icons and preview channel artwork don't have HTTP cache headers
             .respectCacheHeaders(false)
@@ -141,9 +138,9 @@ class LauncherApplication : Application(), ImageLoaderFactory, ComponentCallback
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        // Immediately release image memory cache when system indicates memory pressure (level >= 10 or UI hidden)
-        if (level >= ComponentCallbacks2.TRIM_MEMORY_BACKGROUND || level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN || level >= 10) {
-            Timber.d("LauncherApplication: Trimming image memory cache (level $level)")
+        // Only release memory cache when launcher UI is actually hidden in background
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
+            Timber.d("LauncherApplication: Trimming image memory cache because UI is hidden (level $level)")
             imageLoaderRef?.memoryCache?.clear()
         }
     }

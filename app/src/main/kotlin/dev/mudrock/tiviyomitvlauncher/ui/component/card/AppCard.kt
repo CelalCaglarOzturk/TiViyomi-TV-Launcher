@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.tv.material3.Border
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
@@ -109,13 +110,16 @@ fun AppCard(
     val hasPopupContent = remember(popupContent) { popupContent != null }
     
     val isFocused by interactionSource.collectIsFocusedAsState()
+    val focusedBorderStroke = remember { BorderStroke(3.dp, Color.White) }
 
     PopupContainer(
         visible = menuVisible && hasPopupContent,
         onDismiss = { menuVisible = false },
         content = {
             Column(
-                modifier = modifier.width(cardWidth)
+                modifier = modifier
+                    .width(cardWidth)
+                    .zIndex(if (isFocused) 1f else 0f)
             ) {
                 Card(
                     modifier = Modifier
@@ -124,7 +128,7 @@ fun AppCard(
                     interactionSource = interactionSource,
                     border = CardDefaults.border(
                         focusedBorder = Border(
-                            border = BorderStroke(3.dp, Color.White),
+                            border = focusedBorderStroke,
                         )
                     ),
                     scale = CardDefaults.scale(
