@@ -93,30 +93,38 @@ class LauncherActivity : ComponentActivity() {
 			repeatOnLifecycle(Lifecycle.State.RESUMED) {
 				Timber.d("LauncherActivity: Starting refresh of all data")
 
-				// Delay clearing crash history to allow crash loop detection to work
-				// Only clear if app has been running successfully for a few seconds
-				kotlinx.coroutines.delay(5000)
-				CrashHandler.clearCrashHistory(this@LauncherActivity)
-				Timber.d("LauncherActivity: Crash history cleared after successful startup")
+				// Clear crash history after 5 seconds in background
+				launch {
+					kotlinx.coroutines.delay(5000)
+					CrashHandler.clearCrashHistory(this@LauncherActivity)
+					Timber.d("LauncherActivity: Crash history cleared after successful startup")
+				}
 
-				try {
-					Timber.d("LauncherActivity: Calling refreshAllApplications")
-					appRepository.refreshAllApplications()
-					Timber.d("LauncherActivity: refreshAllApplications completed")
-				} catch (e: Exception) {
-					Timber.e(e, "LauncherActivity: Error refreshing applications")
+				// Refresh apps, inputs, and channels immediately and in parallel
+				launch {
+					try {
+						Timber.d("LauncherActivity: Calling refreshAllApplications")
+						appRepository.refreshAllApplications()
+						Timber.d("LauncherActivity: refreshAllApplications completed")
+					} catch (e: Exception) {
+						Timber.e(e, "LauncherActivity: Error refreshing applications")
+					}
 				}
-				try {
-					inputRepository.refreshAllInputs()
-				} catch (e: Exception) {
-					Timber.e(e, "LauncherActivity: Error refreshing inputs")
+				launch {
+					try {
+						inputRepository.refreshAllInputs()
+					} catch (e: Exception) {
+						Timber.e(e, "LauncherActivity: Error refreshing inputs")
+					}
 				}
-				try {
-					channelRepository.refreshAllChannels()
-				} catch (e: Exception) {
-					Timber.e(e, "LauncherActivity: Error refreshing channels")
+				launch {
+					try {
+						channelRepository.refreshAllChannels()
+					} catch (e: Exception) {
+						Timber.e(e, "LauncherActivity: Error refreshing channels")
+					}
 				}
-				Timber.d("LauncherActivity: All refresh operations completed")
+				Timber.d("LauncherActivity: All refresh operations dispatched")
 			}
 		}
 	}

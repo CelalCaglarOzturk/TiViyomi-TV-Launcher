@@ -54,6 +54,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import dev.mudrock.tiviyomitvlauncher.data.repository.SettingsRepository
 import dev.mudrock.tiviyomitvlauncher.data.sqldelight.App
+import dev.mudrock.tiviyomitvlauncher.ui.component.FocusMarqueeText
 import dev.mudrock.tiviyomitvlauncher.ui.component.PopupContainer
 import dev.mudrock.tiviyomitvlauncher.util.MoveDirection
 import org.koin.compose.koinInject
@@ -203,30 +204,24 @@ fun MoveableAppCard(
                     },
                 interactionSource = interactionSource,
                 title = {
-                    MoveableAppCardTitle(
-                        title = app.displayName,
-                        interactionSource = interactionSource,
-                        enableAnimations = areAnimationsEnabled,
-                        isInMoveMode = isInMoveMode
-                    )
+                    Column(
+                        modifier = Modifier.padding(top = 6.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        FocusMarqueeText(
+                            text = app.displayName,
+                            focused = isFocused && !isInMoveMode && areAnimationsEnabled,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                    }
                 },
                 imageCard = { _ ->
                     Card(
                         modifier = Modifier
                             .height(baseHeight)
-                            .aspectRatio(16f / 9f)
-                            .then(
-                                if (isFocused && !isInMoveMode) {
-                                    Modifier.drawBehind {
-                                        drawRect(
-                                            brush = Brush.radialGradient(
-                                                colors = highlightColors,
-                                                radius = size.maxDimension * 0.8f
-                                            )
-                                        )
-                                    }
-                                } else Modifier
-                            ),
+                            .aspectRatio(16f / 9f),
                         interactionSource = interactionSource,
                         border = CardDefaults.border(
                             focusedBorder = Border(
@@ -235,6 +230,9 @@ fun MoveableAppCard(
                                     borderColor ?: Color.White
                                 ),
                             )
+                        ),
+                        scale = CardDefaults.scale(
+                            focusedScale = if (areAnimationsEnabled && !isInMoveMode) 1.05f else 1.0f
                         ),
                         onClick = {
                             if (!isInMoveMode) {
@@ -302,39 +300,4 @@ fun MoveableAppCard(
             )
         }
     )
-}
-
-@Composable
-private fun MoveableAppCardTitle(
-    title: String,
-    interactionSource: InteractionSource,
-    enableAnimations: Boolean,
-    isInMoveMode: Boolean
-) {
-    val focused by interactionSource.collectIsFocusedAsState()
-
-    Column(
-        modifier = Modifier.padding(top = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        Text(
-            text = title,
-            maxLines = 1,
-            overflow = TextOverflow.Clip,
-            softWrap = false,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.SemiBold
-            ),
-            modifier = Modifier.then(
-                if (focused && !isInMoveMode && enableAnimations) {
-                    Modifier.basicMarquee(
-                        iterations = Int.MAX_VALUE,
-                        initialDelayMillis = 0,
-                    )
-                } else {
-                    Modifier
-                }
-            )
-        )
-    }
 }

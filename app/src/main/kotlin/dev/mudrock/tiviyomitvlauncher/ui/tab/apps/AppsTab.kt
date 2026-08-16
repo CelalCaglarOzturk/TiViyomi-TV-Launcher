@@ -134,29 +134,32 @@ fun AppsTab(
             (itemMinWidth * columnCount) + (spacing * (columnCount - 1)) + horizontalPadding
         }
 
-        LazyVerticalGrid(
-            state = listState,
-            contentPadding = PaddingValues(
-                vertical = 4.dp,
-                horizontal = 48.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            columns = gridCells,
-            modifier = Modifier
-                .width(gridWidth)
-                .fillMaxHeight()
-                .focusProperties {
-                    onEnter = {
-                        if (requestedFocusDirection == FocusDirection.Down) {
-                            firstItemFocusRequester
-                        } else {
-                            FocusRequester.Default
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides dev.mudrock.tiviyomitvlauncher.ui.util.NuvioScrollDefaults.smoothScrollSpec
+        ) {
+            LazyVerticalGrid(
+                state = listState,
+                contentPadding = PaddingValues(
+                    vertical = 4.dp,
+                    horizontal = 48.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                columns = gridCells,
+                modifier = Modifier
+                    .width(gridWidth)
+                    .fillMaxHeight()
+                    .focusProperties {
+                        onEnter = {
+                            if (requestedFocusDirection == FocusDirection.Down) {
+                                firstItemFocusRequester
+                            } else {
+                                FocusRequester.Default
+                            }
                         }
                     }
-                }
-                .focusRestorer(firstItemFocusRequester)
-        ) {
+                    .focusRestorer(firstItemFocusRequester)
+            ) {
             // Visible Apps
             if (hasApps) {
                 itemsIndexed(
@@ -294,4 +297,5 @@ fun AppsTab(
             }
         }
     }
+}
 }

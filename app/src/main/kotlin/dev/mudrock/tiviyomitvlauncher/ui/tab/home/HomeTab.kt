@@ -157,34 +157,28 @@ fun HomeTab(
         }
     }
 
-    LazyColumn(
-        state = listState,
-        verticalArrangement = Arrangement.spacedBy(0.dp),
-        modifier = modifier
-            .fillMaxSize()
-            .focusProperties {
-                onEnter = {
-                    if (requestedFocusDirection == FocusDirection.Down) {
-                        firstItemFocusRequester
-                    } else {
-                        FocusRequester.Default
-                    }
-                }
-            }
-            .focusRestorer(firstItemFocusRequester)
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides dev.mudrock.tiviyomitvlauncher.ui.util.NuvioScrollDefaults.smoothScrollSpec
     ) {
-        item(
-            key = "apps",
-            contentType = "apps_row"
-        ) {
-            Box(
-                modifier = Modifier.onFocusChanged { focusState ->
-                    if (focusState.hasFocus) {
-                        coroutineScope.launch {
-                            listState.animateScrollToItem(0)
+        LazyColumn(
+            state = listState,
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            modifier = modifier
+                .fillMaxSize()
+                .focusProperties {
+                    onEnter = {
+                        if (requestedFocusDirection == FocusDirection.Down) {
+                            firstItemFocusRequester
+                        } else {
+                            FocusRequester.Default
                         }
                     }
                 }
+                .focusRestorer(firstItemFocusRequester)
+        ) {
+            item(
+                key = "apps",
+                contentType = "apps_row"
             ) {
                 AppCardRow(
                     apps = apps,
@@ -192,7 +186,6 @@ fun HomeTab(
                     firstItemFocusRequester = firstItemFocusRequester
                 )
             }
-        }
 
         itemsIndexed(
             items = enabledChannels,
@@ -282,36 +275,25 @@ fun HomeTab(
                     }
                 } else null
 
-                Box(
+                ChannelProgramCardRow(
                     modifier = Modifier
-                        .onFocusChanged { focusState ->
-                            if (focusState.hasFocus) {
-                                coroutineScope.launch {
-                                    listState.animateScrollToItem(index + 1)
-                                }
-                            }
+                        .focusRequester(focusRequester)
+                        .let {
+                            if (index == 0 && apps.isEmpty()) it.focusRequester(
+                                firstItemFocusRequester
+                            ) else it
                         }
-                        .then(if (areMoveAnimationsEnabled) Modifier.animateItem() else Modifier)
-                ) {
-                    ChannelProgramCardRow(
-                        modifier = Modifier
-                            .focusRequester(focusRequester)
-                            .let {
-                                if (index == 0 && apps.isEmpty()) it.focusRequester(
-                                    firstItemFocusRequester
-                                ) else it
-                            }
-                            .focusGroup(),
-                        title = displayTitle,
-                        programs = programs,
-                        channel = channel,
-                        baseHeight = channelCardSize.dp,
-                        onToggleEnabled = onToggleEnabled,
-                        onMoveUp = onMoveUp,
-                        onMoveDown = onMoveDown,
-                        onRemoveProgram = onRemoveProgram
-                    )
-                }
+                        .focusGroup()
+                        .then(if (areMoveAnimationsEnabled) Modifier.animateItem() else Modifier),
+                    title = displayTitle,
+                    programs = programs,
+                    channel = channel,
+                    baseHeight = channelCardSize.dp,
+                    onToggleEnabled = onToggleEnabled,
+                    onMoveUp = onMoveUp,
+                    onMoveDown = onMoveDown,
+                    onRemoveProgram = onRemoveProgram
+                )
             }
         }
 
@@ -340,15 +322,7 @@ fun HomeTab(
                 contentType = "disabled_channels_section"
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { focusState ->
-                            if (focusState.hasFocus) {
-                                coroutineScope.launch {
-                                    listState.animateScrollToItem(enabledChannels.size + 1)
-                                }
-                            }
-                        }
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         text = stringResource(R.string.disabled_channels),
@@ -406,6 +380,7 @@ fun HomeTab(
             }
         }
     }
+}
 }
 
 @Composable

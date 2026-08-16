@@ -55,7 +55,7 @@ import org.koin.compose.koinInject
 
 private const val LONG_PRESS_DELAY_MS = 300L
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ChannelProgramCardRow(
     modifier: Modifier = Modifier,
@@ -89,29 +89,6 @@ fun ChannelProgramCardRow(
 
     // Track which program should receive focus after recomposition
     var focusedProgramId by remember { mutableStateOf<String?>(null) }
-    var isAnimatedFocused by remember { mutableStateOf(false) }
-
-    // Netflix approach for low-end TV: Debounce scale animation during rapid navigation.
-    // Only scale up when focus rests/settles on a row for at least 120ms.
-    LaunchedEffect(isFocused) {
-        if (isFocused) {
-            delay(120L)
-            isAnimatedFocused = true
-        } else {
-            isAnimatedFocused = false
-        }
-    }
-
-    // Smooth scale animation when focus settles on a row
-    val scale by animateFloatAsState(
-        targetValue = if (isAnimatedFocused) 1.05f else 1.0f,
-        animationSpec = if (areRowAnimationsEnabled) {
-            if (isAnimatedFocused) {
-                tween(durationMillis = 200, easing = FastOutSlowInEasing)
-            } else snap()
-        } else snap(),
-        label = "rowScale"
-    )
 
     // Restore focus to the program that was being removed/moved after list recomposes
     val focusRequesters = remember { mutableMapOf<String, FocusRequester>() }
@@ -150,11 +127,6 @@ fun ChannelProgramCardRow(
                 content = {
                     Column(
                         modifier = modifier
-                            .onFocusChanged { isFocused = it.hasFocus }
-                            .graphicsLayer {
-                                scaleX = scale
-                                scaleY = scale
-                            }
                     ) {
                         // Row title (non-focusable, just a label)
                         Row(
@@ -174,18 +146,21 @@ fun ChannelProgramCardRow(
                             )
                         }
 
-                        LazyRow(
-                            state = listState,
-                            contentPadding = PaddingValues(
-                                vertical = 4.dp,
-                                horizontal = 48.dp,
-                            ),
-                            horizontalArrangement = Arrangement.spacedBy(14.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = baseHeight + 8.dp)
-                                .focusRestorer(childFocusRequester),
+                        androidx.compose.runtime.CompositionLocalProvider(
+                            androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides dev.mudrock.tiviyomitvlauncher.ui.util.NuvioScrollDefaults.smoothScrollSpec
                         ) {
+                            LazyRow(
+                                state = listState,
+                                contentPadding = PaddingValues(
+                                    vertical = 4.dp,
+                                    horizontal = 48.dp,
+                                ),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = baseHeight + 8.dp)
+                                    .focusRestorer(childFocusRequester),
+                            ) {
                             itemsIndexed(
                                 items = limitedPrograms,
                                 key = { _, program -> program.id },
@@ -294,14 +269,15 @@ fun ChannelProgramCardRow(
                                                     }
                                                 }
                                                 false
-                                            },
+                                            }
                                     )
                                 }
                             }
                         }
                     }
-                },
-                popupContent = {
+                }
+            },
+            popupContent = {
                     watchNextPopupProgram?.let { program ->
                         WatchNextProgramPopup(
                             programName = program.title ?: "Watch Next Item",

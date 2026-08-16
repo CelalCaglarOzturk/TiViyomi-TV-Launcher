@@ -118,9 +118,12 @@ class ChannelRepository(
         _isRefreshing.value = true
         try {
             Timber.d("Refreshing all channels")
-            refreshWatchNextChannels()
-            refreshPreviewChannels()
-
+            coroutineScope {
+                val watchNextDeferred = async { refreshWatchNextChannels() }
+                val previewDeferred = async { refreshPreviewChannels() }
+                watchNextDeferred.await()
+                previewDeferred.await()
+            }
             Timber.d("All channels refreshed")
         } finally {
             _isRefreshing.value = false
@@ -132,7 +135,11 @@ class ChannelRepository(
         val channels = channelResolver.getPreviewChannels(context)
         commitChannels(ChannelType.PREVIEW, channels)
 
-        for (channel in channels) refreshChannelPrograms(channel)
+        coroutineScope {
+            channels.map { channel ->
+                async { refreshChannelPrograms(channel) }
+            }.awaitAll()
+        }
         Timber.d("Preview channels refreshed: ${channels.size} channels")
     }
 

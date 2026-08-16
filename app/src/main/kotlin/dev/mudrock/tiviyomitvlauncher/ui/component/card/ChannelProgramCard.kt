@@ -46,6 +46,7 @@ import coil.request.ImageRequest
 import dev.mudrock.tiviyomitvlauncher.R
 import dev.mudrock.tiviyomitvlauncher.data.repository.SettingsRepository
 import dev.mudrock.tiviyomitvlauncher.data.sqldelight.ChannelProgram
+import dev.mudrock.tiviyomitvlauncher.ui.component.FocusMarqueeText
 
 import org.koin.compose.koinInject
 
@@ -122,24 +123,6 @@ fun ChannelProgramCard(
         }
     }
 
-    val focusBorderWidth by androidx.compose.animation.core.animateDpAsState(
-        targetValue = if (isFocused) 3.dp else 0.dp,
-        animationSpec = if (enableAnimations) androidx.compose.animation.core.tween(durationMillis = 180, easing = androidx.compose.animation.core.FastOutSlowInEasing) else androidx.compose.animation.core.snap(),
-        label = "focusBorderWidth"
-    )
-
-    val focusBorderColor by androidx.compose.animation.animateColorAsState(
-        targetValue = if (isFocused) Color.White else Color.Transparent,
-        animationSpec = if (enableAnimations) androidx.compose.animation.core.tween(durationMillis = 180, easing = androidx.compose.animation.core.FastOutSlowInEasing) else androidx.compose.animation.core.snap(),
-        label = "focusBorderColor"
-    )
-
-    val focusHighlightAlpha by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (isFocused) 0.3f else 0.0f,
-        animationSpec = if (enableAnimations) androidx.compose.animation.core.tween(durationMillis = 180, easing = androidx.compose.animation.core.FastOutSlowInEasing) else androidx.compose.animation.core.snap(),
-        label = "focusHighlightAlpha"
-    )
-
     StandardCardContainer(
         modifier = modifier.width(cardWidth),
         interactionSource = interactionSource,
@@ -149,22 +132,12 @@ fun ChannelProgramCard(
                     modifier = Modifier.padding(top = 6.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text(
+                    FocusMarqueeText(
                         text = program.title!!,
-                        maxLines = 1,
-                        overflow = TextOverflow.Clip,
-                        softWrap = false,
+                        focused = isFocused && enableAnimations && !isMoving,
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = FontWeight.SemiBold
-                        ),
-                        modifier = Modifier.let {
-                            if (isFocused && enableAnimations && !isMoving) it.then(
-                                Modifier.basicMarquee(
-                                    iterations = Int.MAX_VALUE,
-                                    initialDelayMillis = 2000,
-                                )
-                            ) else it
-                        }
+                        )
                     )
                 }
             }
@@ -173,31 +146,18 @@ fun ChannelProgramCard(
             Card(
                 modifier = Modifier
                     .height(baseHeight)
-                    .aspectRatio(aspectRatio)
-                    .drawBehind {
-                        if (focusHighlightAlpha > 0f) {
-                            drawRect(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(
-                                        Color.White.copy(alpha = focusHighlightAlpha),
-                                        Color.White.copy(alpha = 0f)
-                                    ),
-                                    radius = size.maxDimension * 0.8f
-                                )
-                            )
-                        }
-                    },
+                    .aspectRatio(aspectRatio),
                 interactionSource = interactionSource,
                 colors = CardDefaults.colors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 ),
                 border = CardDefaults.border(
-                    border = Border(
-                        border = BorderStroke(focusBorderWidth, focusBorderColor),
-                    ),
                     focusedBorder = Border(
                         border = BorderStroke(3.dp, Color.White),
                     )
+                ),
+                scale = CardDefaults.scale(
+                    focusedScale = if (enableAnimations) 1.05f else 1.0f
                 ),
                 onClick = {
                     launchIntent?.let { intent ->

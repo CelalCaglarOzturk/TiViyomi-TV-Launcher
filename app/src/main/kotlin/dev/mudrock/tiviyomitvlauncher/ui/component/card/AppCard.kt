@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -42,6 +43,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import dev.mudrock.tiviyomitvlauncher.data.repository.SettingsRepository
 import dev.mudrock.tiviyomitvlauncher.data.sqldelight.App
+import dev.mudrock.tiviyomitvlauncher.ui.component.FocusMarqueeText
 import dev.mudrock.tiviyomitvlauncher.ui.component.PopupContainer
 import org.koin.compose.koinInject
 
@@ -111,24 +113,6 @@ fun AppCard(
     
     val isFocused by interactionSource.collectIsFocusedAsState()
 
-    val focusBorderWidth by androidx.compose.animation.core.animateDpAsState(
-        targetValue = if (isFocused) 3.dp else 0.dp,
-        animationSpec = if (areAnimationsEnabled) androidx.compose.animation.core.tween(durationMillis = 180, easing = androidx.compose.animation.core.FastOutSlowInEasing) else androidx.compose.animation.core.snap(),
-        label = "appFocusBorderWidth"
-    )
-
-    val focusBorderColor by androidx.compose.animation.animateColorAsState(
-        targetValue = if (isFocused) Color.White else Color.Transparent,
-        animationSpec = if (areAnimationsEnabled) androidx.compose.animation.core.tween(durationMillis = 180, easing = androidx.compose.animation.core.FastOutSlowInEasing) else androidx.compose.animation.core.snap(),
-        label = "appFocusBorderColor"
-    )
-
-    val focusHighlightAlpha by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (isFocused) 0.3f else 0.0f,
-        animationSpec = if (areAnimationsEnabled) androidx.compose.animation.core.tween(durationMillis = 180, easing = androidx.compose.animation.core.FastOutSlowInEasing) else androidx.compose.animation.core.snap(),
-        label = "appFocusHighlightAlpha"
-    )
-
     PopupContainer(
         visible = menuVisible && hasPopupContent,
         onDismiss = { menuVisible = false },
@@ -137,38 +121,31 @@ fun AppCard(
                 modifier = modifier.width(cardWidth),
                 interactionSource = interactionSource,
                 title = {
-                    AppCardTitle(
-                        title = app.displayName,
-                        interactionSource = interactionSource,
-                        enableAnimations = areAnimationsEnabled
-                    )
+                    Column(
+                        modifier = Modifier.padding(top = 6.dp)
+                    ) {
+                        FocusMarqueeText(
+                            text = app.displayName,
+                            focused = isFocused && areAnimationsEnabled,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                    }
                 },
                 imageCard = { _ ->
                     Card(
                         modifier = Modifier
                             .height(baseHeight)
-                            .aspectRatio(16f / 9f)
-                            .drawBehind {
-                                if (focusHighlightAlpha > 0f) {
-                                    drawRect(
-                                        brush = Brush.radialGradient(
-                                            colors = listOf(
-                                                Color.White.copy(alpha = focusHighlightAlpha),
-                                                Color.White.copy(alpha = 0f)
-                                            ),
-                                            radius = size.maxDimension * 0.8f
-                                        )
-                                    )
-                                }
-                            },
+                            .aspectRatio(16f / 9f),
                         interactionSource = interactionSource,
                         border = CardDefaults.border(
-                            border = Border(
-                                border = BorderStroke(focusBorderWidth, focusBorderColor),
-                            ),
                             focusedBorder = Border(
                                 border = BorderStroke(3.dp, Color.White),
                             )
+                        ),
+                        scale = CardDefaults.scale(
+                            focusedScale = if (areAnimationsEnabled) 1.05f else 1.0f
                         ),
                         onClick = {
                             if (onClick != null) {
@@ -198,36 +175,5 @@ fun AppCard(
         popupContent = {
             if (popupContent != null) popupContent()
         }
-    )
-}
-
-@Composable
-private fun AppCardTitle(
-    title: String,
-    interactionSource: InteractionSource,
-    enableAnimations: Boolean
-) {
-    val focused by interactionSource.collectIsFocusedAsState()
-
-    Text(
-        text = title,
-        maxLines = 1,
-        overflow = TextOverflow.Clip,
-        softWrap = false,
-        style = MaterialTheme.typography.bodyMedium.copy(
-            fontWeight = FontWeight.SemiBold
-        ),
-        modifier = Modifier
-            .then(
-                if (focused && enableAnimations) {
-                    Modifier.basicMarquee(
-                        iterations = Int.MAX_VALUE,
-                        initialDelayMillis = 0,
-                    )
-                } else {
-                    Modifier
-                }
-            )
-            .padding(top = 6.dp),
     )
 }

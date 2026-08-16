@@ -39,6 +39,10 @@ android {
 	}
 }
 
+composeCompiler {
+	stabilityConfigurationFiles.add(rootProject.layout.projectDirectory.file("compose_stability_config.conf"))
+}
+
 sqldelight {
 	databases {
 		create("Database") {
