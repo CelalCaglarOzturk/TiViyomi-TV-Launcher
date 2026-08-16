@@ -43,6 +43,7 @@ import dev.mudrock.tiviyomitvlauncher.ui.component.card.AppCard
 import dev.mudrock.tiviyomitvlauncher.ui.component.card.MoveableAppCard
 import dev.mudrock.tiviyomitvlauncher.util.FocusController
 import dev.mudrock.tiviyomitvlauncher.util.MoveDirection
+import dev.mudrock.tiviyomitvlauncher.ui.util.dpadRepeatThrottle
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
@@ -58,7 +59,9 @@ fun AppsTab(
 
     val enableAnimations by settingsRepository.enableAnimations.collectAsStateWithLifecycle()
     val animAppMove by settingsRepository.animAppMove.collectAsStateWithLifecycle()
+    val animAppIcon by settingsRepository.animAppIcon.collectAsStateWithLifecycle()
     val areAppMoveAnimationsEnabled = enableAnimations && animAppMove
+    val areAnimationsEnabled = enableAnimations && animAppIcon
 
     val apps by viewModel.apps.collectAsStateWithLifecycle()
     val hiddenApps by viewModel.hiddenApps.collectAsStateWithLifecycle()
@@ -149,6 +152,7 @@ fun AppsTab(
                 modifier = Modifier
                     .width(gridWidth)
                     .fillMaxHeight()
+                    .dpadRepeatThrottle(horizontalGateMs = 70L, verticalGateMs = 100L)
                     .focusProperties {
                         onEnter = {
                             if (requestedFocusDirection == FocusDirection.Down) {
@@ -186,12 +190,13 @@ fun AppsTab(
 
                     Box(
                         modifier = Modifier
-                            .run { if (areAppMoveAnimationsEnabled) animateItem() else this }
+                            .run { if (areAppMoveAnimationsEnabled && isInMoveMode) animateItem() else this }
                             .zIndex(if (isInMoveMode) 1f else 0f)
                     ) {
                         MoveableAppCard(
                             app = app,
                             baseHeight = appCardSize.dp,
+                            areAnimationsEnabled = areAnimationsEnabled,
                             modifier = Modifier
                                 .focusRequester(appFocusRequester)
                                 .then(
@@ -267,11 +272,12 @@ fun AppsTab(
                     }
 
                     Box(
-                        modifier = Modifier.run { if (areAppMoveAnimationsEnabled) animateItem() else this }
+                        modifier = Modifier.run { if (areAppMoveAnimationsEnabled && moveAppId == app.id) animateItem() else this }
                     ) {
                         AppCard(
                             app = app,
                             baseHeight = appCardSize.dp,
+                            areAnimationsEnabled = areAnimationsEnabled,
                             modifier = Modifier
                                 .focusRequester(appFocusRequester)
                                 .then(

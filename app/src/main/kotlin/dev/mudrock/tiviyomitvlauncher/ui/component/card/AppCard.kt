@@ -52,15 +52,12 @@ fun AppCard(
     app: App,
     modifier: Modifier = Modifier,
     baseHeight: Dp = 90.dp,
+    areAnimationsEnabled: Boolean = true,
     popupContent: (@Composable () -> Unit)? = null,
     onPopupVisibilityChanged: ((Boolean) -> Unit)? = null,
     onClick: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
-    val settingsRepository = koinInject<SettingsRepository>()
-    val enableAnimations by settingsRepository.enableAnimations.collectAsStateWithLifecycle()
-    val animAppIcon by settingsRepository.animAppIcon.collectAsStateWithLifecycle()
-    val areAnimationsEnabled = enableAnimations && animAppIcon
 
     // Stable interaction source - remember without keys since it's per-composition
     val interactionSource = remember { MutableInteractionSource() }

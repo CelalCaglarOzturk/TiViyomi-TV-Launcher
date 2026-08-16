@@ -64,39 +64,18 @@ class AppResolver {
         val packageManager = context.packageManager
 
         Timber.d("AppResolver: Starting to query applications")
-        Timber.d("AppResolver: Android SDK version: ${Build.VERSION.SDK_INT}")
 
-        // Get apps via categories
+        // Fast path: Query leanback and standard launcher categories
         val categoryApps = getCategoryApps(packageManager)
-        
-        // Also get apps via fallback method (installed apps with launch intent)
-        val fallbackApps = getInstalledAppsWithLaunchIntent(packageManager)
-        
-        // Combine them, preferring categoryApps if there's a duplicate
-        val allAppsMap = mutableMapOf<String, App>()
-        
-        // First add all from fallback (more comprehensive but maybe less specific)
-        fallbackApps.forEach { app ->
-            allAppsMap[app.packageName] = app
-        }
-        
-        // Then overwrite/add with categoryApps (more specific launcher activities)
-        categoryApps.forEach { app ->
-            val existing = allAppsMap[app.packageName]
-            if (existing != null) {
-                // If we already have it, merge the intents to ensure we have both if available
-                allAppsMap[app.packageName] = app.copy(
-                    launchIntentUriDefault = app.launchIntentUriDefault ?: existing.launchIntentUriDefault,
-                    launchIntentUriLeanback = app.launchIntentUriLeanback ?: existing.launchIntentUriLeanback
-                )
-            } else {
-                allAppsMap[app.packageName] = app
-            }
+        if (categoryApps.isNotEmpty()) {
+            Timber.d("AppResolver: Total unique apps found via categories: ${categoryApps.size}")
+            return categoryApps
         }
 
-        val result = allAppsMap.values.toList()
-        Timber.d("AppResolver: Total unique apps found (combined): ${result.size}")
-        return result
+        // Fallback only if no category apps were found
+        val fallbackApps = getInstalledAppsWithLaunchIntent(packageManager)
+        Timber.d("AppResolver: Total unique apps found via fallback: ${fallbackApps.size}")
+        return fallbackApps
     }
 
     private fun getCategoryApps(packageManager: PackageManager): List<App> {

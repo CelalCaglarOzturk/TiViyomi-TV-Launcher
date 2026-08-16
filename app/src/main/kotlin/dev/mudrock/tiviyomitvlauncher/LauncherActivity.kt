@@ -44,6 +44,8 @@ class LauncherActivity : ComponentActivity() {
 		private var testCrashPressCount = 0
 		private var lastTestCrashPressTime = 0L
 		private const val TEST_CRASH_TIMEOUT_MS = 10000L // Reset counter after 10 seconds
+		private var lastRefreshTime = 0L
+		private const val REFRESH_COOLDOWN_MS = 180_000L // 3 minutes cooldown between auto-refreshes
 	}
 
 	private val defaultLauncherHelper: DefaultLauncherHelper by inject()
@@ -91,7 +93,8 @@ class LauncherActivity : ComponentActivity() {
 
 		lifecycleScope.launch {
 			repeatOnLifecycle(Lifecycle.State.RESUMED) {
-				Timber.d("LauncherActivity: Starting refresh of all data")
+				val now = SystemClock.elapsedRealtime()
+				val shouldRefresh = lastRefreshTime == 0L || (now - lastRefreshTime > REFRESH_COOLDOWN_MS)
 
 				// Clear crash history after 5 seconds in background
 				launch {
@@ -100,31 +103,37 @@ class LauncherActivity : ComponentActivity() {
 					Timber.d("LauncherActivity: Crash history cleared after successful startup")
 				}
 
-				// Refresh apps, inputs, and channels immediately and in parallel
-				launch {
-					try {
-						Timber.d("LauncherActivity: Calling refreshAllApplications")
-						appRepository.refreshAllApplications()
-						Timber.d("LauncherActivity: refreshAllApplications completed")
-					} catch (e: Exception) {
-						Timber.e(e, "LauncherActivity: Error refreshing applications")
+				if (shouldRefresh) {
+					lastRefreshTime = now
+					Timber.d("LauncherActivity: Starting throttled refresh of all data")
+
+					// Refresh apps, inputs, and channels immediately and in parallel
+					launch {
+						try {
+							Timber.d("LauncherActivity: Calling refreshAllApplications")
+							appRepository.refreshAllApplications()
+							Timber.d("LauncherActivity: refreshAllApplications completed")
+						} catch (e: Exception) {
+							Timber.e(e, "LauncherActivity: Error refreshing applications")
+						}
 					}
-				}
-				launch {
-					try {
-						inputRepository.refreshAllInputs()
-					} catch (e: Exception) {
-						Timber.e(e, "LauncherActivity: Error refreshing inputs")
+					launch {
+						try {
+							inputRepository.refreshAllInputs()
+						} catch (e: Exception) {
+							Timber.e(e, "LauncherActivity: Error refreshing inputs")
+						}
 					}
-				}
-				launch {
-					try {
-						channelRepository.refreshAllChannels()
-					} catch (e: Exception) {
-						Timber.e(e, "LauncherActivity: Error refreshing channels")
+					launch {
+						try {
+							channelRepository.refreshAllChannels()
+						} catch (e: Exception) {
+							Timber.e(e, "LauncherActivity: Error refreshing channels")
+						}
 					}
+				} else {
+					Timber.d("LauncherActivity: Skipping refresh (cooling down)")
 				}
-				Timber.d("LauncherActivity: All refresh operations dispatched")
 			}
 		}
 	}

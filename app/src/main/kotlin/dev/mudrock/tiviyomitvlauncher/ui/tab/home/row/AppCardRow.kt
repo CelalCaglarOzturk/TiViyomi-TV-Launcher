@@ -52,7 +52,9 @@ fun AppCardRow(
 
     val enableAnimations by settingsRepository.enableAnimations.collectAsState(initial = true)
     val animAppMove by settingsRepository.animAppMove.collectAsState(initial = true)
+    val animAppIcon by settingsRepository.animAppIcon.collectAsState(initial = true)
     val areAppMoveAnimationsEnabled = enableAnimations && animAppMove
+    val areAnimationsEnabled = enableAnimations && animAppIcon
 
     // Track which app is in move mode (only one at a time)
     var moveAppId by remember { mutableStateOf<String?>(null) }
@@ -140,10 +142,11 @@ fun AppCardRow(
                 focusRequesters.getOrPut(app.id) { FocusRequester() }
             }
 
-            Box(modifier = if (areAppMoveAnimationsEnabled) Modifier.animateItem() else Modifier) {
+            Box(modifier = if (areAppMoveAnimationsEnabled && isInMoveMode) Modifier.animateItem() else Modifier) {
                 MoveableAppCard(
                     app = app,
                     baseHeight = baseHeight,
+                    areAnimationsEnabled = areAnimationsEnabled,
                     modifier = Modifier
                         .focusRequester(appFocusRequester)
                         .then(

@@ -64,6 +64,8 @@ import dev.mudrock.tiviyomitvlauncher.util.FocusController
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
+import dev.mudrock.tiviyomitvlauncher.ui.util.dpadVerticalFastScroll
+
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeTab(
@@ -168,6 +170,7 @@ fun HomeTab(
             verticalArrangement = Arrangement.spacedBy(0.dp),
             modifier = modifier
                 .fillMaxSize()
+                .dpadVerticalFastScroll(scrollableState = listState)
                 .focusProperties {
                     onEnter = {
                         if (requestedFocusDirection == FocusDirection.Down) {
@@ -218,7 +221,7 @@ fun HomeTab(
                 }
             }
 
-            val onToggleEnabled = remember(channel, viewModel) {
+            val onToggleEnabled = remember(channel.id, viewModel) {
                 { enabled: Boolean ->
                     focusedChannelId = channel.id
                     viewModel.setChannelEnabled(channel, enabled)
@@ -226,14 +229,14 @@ fun HomeTab(
                 }
             }
 
-            val onMoveUp = remember(channel, viewModel) {
+            val onMoveUp = remember(channel.id, viewModel) {
                 {
                     viewModel.moveChannelUp(channel)
                     Unit
                 }
             }
 
-            val onMoveDown = remember(channel, viewModel) {
+            val onMoveDown = remember(channel.id, viewModel) {
                 {
                     viewModel.moveChannelDown(channel)
                     Unit
@@ -257,8 +260,7 @@ fun HomeTab(
                             firstItemFocusRequester
                         ) else it
                     }
-                    .focusGroup()
-                    .then(if (areMoveAnimationsEnabled) Modifier.animateItem() else Modifier),
+                    .focusGroup(),
                 title = displayTitle,
                 programs = rowData.programs,
                 channel = channel,

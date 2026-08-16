@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
 import dev.mudrock.tiviyomitvlauncher.ui.util.NuvioScrollDefaults
+import dev.mudrock.tiviyomitvlauncher.ui.util.dpadRepeatThrottle
 
 @OptIn(ExperimentalComposeUiApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
@@ -78,6 +79,7 @@ fun CardRow(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .dpadRepeatThrottle(horizontalGateMs = 70L)
                     .focusRestorer(childFocusRequester),
             ) {
                 content(childFocusRequester)

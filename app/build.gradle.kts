@@ -22,6 +22,20 @@ android {
 		versionName = "1.0.0"
 	}
 
+	buildTypes {
+		release {
+			isMinifyEnabled = true
+			isShrinkResources = true
+			proguardFiles(
+				getDefaultProguardFile("proguard-android-optimize.txt"),
+				"proguard-rules.pro"
+			)
+		}
+		debug {
+			isMinifyEnabled = false
+		}
+	}
+
 	buildFeatures {
 		buildConfig = true
 		compose = true
@@ -40,6 +54,8 @@ android {
 }
 
 composeCompiler {
+	metricsDestination = layout.buildDirectory.dir("compose_metrics")
+	reportsDestination = layout.buildDirectory.dir("compose_reports")
 	stabilityConfigurationFiles.add(rootProject.layout.projectDirectory.file("compose_stability_config.conf"))
 }
 

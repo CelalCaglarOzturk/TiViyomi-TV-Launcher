@@ -56,11 +56,10 @@ fun ChannelProgramCard(
     modifier: Modifier = Modifier,
     baseHeight: Dp = 100.dp,
     overrideAspectRatio: Float? = null,
-    isMoving: Boolean = false
+    isMoving: Boolean = false,
+    enableAnimations: Boolean = true
 ) {
     val context = LocalContext.current
-    val settingsRepository = koinInject<SettingsRepository>()
-    val enableAnimations by settingsRepository.enableAnimations.collectAsStateWithLifecycle()
 
     // Stable interaction source - remember without keys since it's per-composition
     val interactionSource = remember { MutableInteractionSource() }

@@ -66,6 +66,7 @@ fun MoveableAppCard(
     baseHeight: Dp = 90.dp,
     isInMoveMode: Boolean = false,
     isFavorite: Boolean = false,
+    areAnimationsEnabled: Boolean = true,
     onMoveModeChanged: ((Boolean) -> Unit)? = null,
     onMove: ((direction: MoveDirection) -> Unit)? = null,
     onToggleFavorite: ((Boolean) -> Unit)? = null,
@@ -73,10 +74,6 @@ fun MoveableAppCard(
     onClick: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
-    val settingsRepository = koinInject<SettingsRepository>()
-    val enableAnimations by settingsRepository.enableAnimations.collectAsStateWithLifecycle(initialValue = true)
-    val animAppIcon by settingsRepository.animAppIcon.collectAsStateWithLifecycle(initialValue = true)
-    val areAnimationsEnabled = enableAnimations && animAppIcon
 
     // Stable interaction source - remember without keys since it's per-composition
     val interactionSource = remember { MutableInteractionSource() }

@@ -53,6 +53,8 @@ import dev.mudrock.tiviyomitvlauncher.ui.tab.home.ChannelPopup
 import dev.mudrock.tiviyomitvlauncher.ui.tab.home.WatchNextProgramPopup
 import org.koin.compose.koinInject
 
+import dev.mudrock.tiviyomitvlauncher.ui.util.dpadRepeatThrottle
+
 private const val LONG_PRESS_DELAY_MS = 300L
 
 @OptIn(ExperimentalComposeUiApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
@@ -159,6 +161,7 @@ fun ChannelProgramCardRow(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .heightIn(min = baseHeight + 8.dp)
+                                    .dpadRepeatThrottle(horizontalGateMs = 70L)
                                     .focusRestorer(childFocusRequester),
                             ) {
                             itemsIndexed(
@@ -193,6 +196,7 @@ fun ChannelProgramCardRow(
                                         program = program,
                                         baseHeight = baseHeight,
                                         isMoving = isInMoveMode,
+                                        enableAnimations = areRowAnimationsEnabled,
                                         modifier = Modifier
                                             .focusRequester(programFocusRequester)
                                             .then(

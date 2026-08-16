@@ -18,25 +18,33 @@ class AppRepository(
         Timber.d("AppRepository: commitApps called with ${apps.size} apps")
 
         try {
-            // Get existing apps from database
-            val existingApps = database.apps.getAllIncludingHidden().executeAsList()
-            val existingIds = existingApps.map { it.id }.toSet()
-            Timber.d("AppRepository: Existing IDs in DB: ${existingIds.size}")
+            database.database.transaction {
+                // Get existing apps from database
+                val existingApps = database.apps.getAllIncludingHidden().executeAsList()
+                val existingIds = existingApps.map { it.id }.toSet()
+                val existingMap = existingApps.associateBy { it.id }
+                Timber.d("AppRepository: Existing IDs in DB: ${existingIds.size}")
 
-            val newIds = apps.map { it.id }.toSet()
-            val idsToRemove = existingIds.subtract(newIds)
+                val newIds = apps.map { it.id }.toSet()
+                val idsToRemove = existingIds.subtract(newIds)
 
-            Timber.d("AppRepository: IDs to remove: ${idsToRemove.size}")
+                Timber.d("AppRepository: IDs to remove: ${idsToRemove.size}")
 
-            idsToRemove.forEach { id ->
-                database.apps.removeById(id)
-            }
+                idsToRemove.forEach { id ->
+                    database.apps.removeById(id)
+                }
 
-            // Upsert all found apps
-            apps.forEach { app ->
-                val isNewApp = app.id !in existingIds
-                Timber.d("AppRepository: Upserting app: ${app.displayName} (${app.id}), isNew: $isNewApp")
-                commitApp(app, isNewApp)
+                // Upsert all found apps
+                apps.forEach { app ->
+                    val existing = existingMap[app.id]
+                    val isNewApp = existing == null
+                    // Only update if it's new or content changed
+                    if (isNewApp || existing!!.displayName != app.displayName ||
+                        existing.launchIntentUriDefault != app.launchIntentUriDefault ||
+                        existing.launchIntentUriLeanback != app.launchIntentUriLeanback) {
+                        commitApp(app, isNewApp)
+                    }
+                }
             }
 
             Timber.d("AppRepository: commitApps completed")

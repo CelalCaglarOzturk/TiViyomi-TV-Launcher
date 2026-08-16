@@ -69,11 +69,14 @@ class AppIconFetcher(
             return ContextCompat.getDrawable(context, R.drawable.ic_launcher)!!
         }
 
+        val cacheKey = app.packageName
+        iconCache.get(cacheKey)?.let { return it }
+
         val packageManager = context.packageManager
 
         // Try to get the app icon/banner from the launch intent
         val intentUri = app.launchIntentUriLeanback ?: app.launchIntentUriDefault
-        if (intentUri != null) {
+        val loadedDrawable = if (intentUri != null) {
             try {
                 val intent = Intent.parseUri(intentUri, 0)
 
@@ -85,26 +88,23 @@ class AppIconFetcher(
                 }
 
                 if (banner != null) {
-                    return banner
-                }
-
-                // Fall back to activity icon
-                val icon = try {
-                    packageManager.getActivityIcon(intent)
-                } catch (e: PackageManager.NameNotFoundException) {
-                    null
-                }
-
-                if (icon != null) {
-                    return icon
+                    banner
+                } else {
+                    // Fall back to activity icon
+                    try {
+                        packageManager.getActivityIcon(intent)
+                    } catch (e: PackageManager.NameNotFoundException) {
+                        null
+                    }
                 }
             } catch (e: Exception) {
-                // Ignore parse errors and fall through to default
+                null
             }
-        }
+        } else null
 
-        // Final fallback to default activity icon
-        return packageManager.defaultActivityIcon
+        val finalDrawable = loadedDrawable ?: packageManager.defaultActivityIcon
+        iconCache.put(cacheKey, finalDrawable)
+        return finalDrawable
     }
 
     /**
@@ -127,5 +127,10 @@ class AppIconFetcher(
 
     companion object {
         private const val SETTINGS_PACKAGE_NAME = "dev.mudrock.tiviyomitvlauncher.settings"
+        private val iconCache = android.util.LruCache<String, Drawable>(100)
+
+        fun clearIconCache() {
+            iconCache.evictAll()
+        }
     }
 }
