@@ -76,6 +76,45 @@ class HomeTabViewModel(
     val channelCardSize = settingsRepository.channelCardSize
         .stateIn(viewModelScope, SHARING_STARTED, SettingsRepository.DEFAULT_CHANNEL_CARD_SIZE)
 
+    val allProgramsByChannel = channelRepository.getAllPrograms()
+        .map { programs -> programs.groupBy { it.channelId } }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SHARING_STARTED, emptyMap())
+
+    val channelRows: StateFlow<List<HomeChannelRowData>> = kotlinx.coroutines.flow.combine(
+        channels,
+        allAppsMap,
+        allProgramsByChannel
+    ) { enabledChannels, appsMap, programsMap ->
+        val hasAppChannels = enabledChannels.any { it.type != dev.mudrock.tiviyomitvlauncher.data.model.ChannelType.WATCH_NEXT }
+        enabledChannels.mapNotNull { channel ->
+            val isWatchNext = channel.type == dev.mudrock.tiviyomitvlauncher.data.model.ChannelType.WATCH_NEXT
+            val app = appsMap[channel.packageName]
+            val programs = programsMap[channel.id] ?: emptyList()
+
+            val shouldDisplay = if (isWatchNext && !hasAppChannels) {
+                false
+            } else {
+                isWatchNext || app != null
+            }
+
+            if (shouldDisplay) {
+                val titlePair = if (isWatchNext) null else (app?.displayName ?: channel.packageName) to channel.displayName
+                HomeChannelRowData(
+                    channel = channel,
+                    app = app,
+                    titlePair = titlePair,
+                    programs = programs,
+                    isWatchNext = isWatchNext
+                )
+            } else {
+                null
+            }
+        }
+    }
+    .flowOn(Dispatchers.Default)
+    .stateIn(viewModelScope, SHARING_STARTED, emptyList())
+
     private val _channelProgramsCache = mutableMapOf<String, StateFlow<List<ChannelProgram>>>()
 
     fun channelPrograms(channelId: String): StateFlow<List<ChannelProgram>> {
@@ -155,3 +194,11 @@ class HomeTabViewModel(
         channelRepository.moveChannelDown(channel.id)
     }
 }
+
+data class HomeChannelRowData(
+    val channel: Channel,
+    val app: App?,
+    val titlePair: Pair<String, String>?,
+    val programs: List<ChannelProgram>,
+    val isWatchNext: Boolean
+)

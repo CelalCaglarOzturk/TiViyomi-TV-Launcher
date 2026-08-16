@@ -1,0 +1,27 @@
+# TV Launcher Baseline Profile
+Ldev/mudrock/tiviyomitvlauncher/LauncherActivity;
+Ldev/mudrock/tiviyomitvlauncher/LauncherApplication;
+Ldev/mudrock/tiviyomitvlauncher/ui/screen/launcher/LauncherScreenKt;
+Ldev/mudrock/tiviyomitvlauncher/ui/tab/home/HomeTabKt;
+Ldev/mudrock/tiviyomitvlauncher/ui/tab/home/HomeTabViewModel;
+Ldev/mudrock/tiviyomitvlauncher/ui/tab/home/row/AppCardRowKt;
+Ldev/mudrock/tiviyomitvlauncher/ui/tab/home/row/CardRowKt;
+Ldev/mudrock/tiviyomitvlauncher/ui/tab/home/row/ChannelProgramCardRowKt;
+Ldev/mudrock/tiviyomitvlauncher/ui/tab/apps/AppsTabKt;
+Ldev/mudrock/tiviyomitvlauncher/ui/tab/apps/AppsTabViewModel;
+Ldev/mudrock/tiviyomitvlauncher/ui/component/FocusMarqueeTextKt;
+Ldev/mudrock/tiviyomitvlauncher/ui/component/card/AppCardKt;
+Ldev/mudrock/tiviyomitvlauncher/ui/component/card/MoveableAppCardKt;
+Ldev/mudrock/tiviyomitvlauncher/ui/component/card/ChannelProgramCardKt;
+Ldev/mudrock/tiviyomitvlauncher/ui/util/NuvioScrollDefaults;
+Ldev/mudrock/tiviyomitvlauncher/data/repository/AppRepository;
+Ldev/mudrock/tiviyomitvlauncher/data/repository/ChannelRepository;
+Ldev/mudrock/tiviyomitvlauncher/image/AppIconFetcher;
+Landroidx/tv/material3/CardDefaults;
+Landroidx/tv/material3/CardKt;
+Landroidx/compose/foundation/lazy/LazyListState;
+Landroidx/compose/foundation/lazy/LazyColumnKt;
+Landroidx/compose/foundation/lazy/LazyRowKt;
+Landroidx/compose/foundation/lazy/grid/LazyVerticalGridKt;
+Landroidx/profileinstaller/ProfileInstallerInitializer;
+Landroidx/profileinstaller/ProfileInstaller;

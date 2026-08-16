@@ -91,38 +91,15 @@ fun LauncherScreen(
                 val isHomeVisible = currentDestination == Destinations.Home
                 val isAppsVisible = currentDestination == Destinations.Apps
 
-                // Both tabs are always composed and kept in memory for instant switching.
-                // We use graphicsLayer for visibility (more efficient than alpha modifier)
-                // and focusProperties with FocusRequester.Cancel to block focus traversal
-                // on the inactive tab completely.
-
-                // Home Tab - always composed
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            alpha = if (isHomeVisible) 1f else 0f
-                            translationX = if (isHomeVisible) 0f else 10000f
-                        }
-                ) {
+                if (isHomeVisible) {
                     HomeTab(
                         modifier = Modifier.fillMaxSize(),
-                        isActive = isHomeVisible
+                        isActive = true
                     )
-                }
-
-                // Apps Tab - always composed
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            alpha = if (isAppsVisible) 1f else 0f
-                            translationX = if (isAppsVisible) 0f else 10000f
-                        }
-                ) {
+                } else if (isAppsVisible) {
                     AppsTab(
                         modifier = Modifier.fillMaxSize(),
-                        isActive = isAppsVisible
+                        isActive = true
                     )
                 }
             }

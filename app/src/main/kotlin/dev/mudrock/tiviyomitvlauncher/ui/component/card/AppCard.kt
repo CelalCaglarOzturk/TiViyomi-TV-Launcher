@@ -117,60 +117,57 @@ fun AppCard(
         visible = menuVisible && hasPopupContent,
         onDismiss = { menuVisible = false },
         content = {
-            StandardCardContainer(
-                modifier = modifier.width(cardWidth),
-                interactionSource = interactionSource,
-                title = {
-                    Column(
-                        modifier = Modifier.padding(top = 6.dp)
-                    ) {
-                        FocusMarqueeText(
-                            text = app.displayName,
-                            focused = isFocused && areAnimationsEnabled,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.SemiBold
-                            )
+            Column(
+                modifier = modifier.width(cardWidth)
+            ) {
+                Card(
+                    modifier = Modifier
+                        .height(baseHeight)
+                        .aspectRatio(16f / 9f),
+                    interactionSource = interactionSource,
+                    border = CardDefaults.border(
+                        focusedBorder = Border(
+                            border = BorderStroke(3.dp, Color.White),
                         )
-                    }
-                },
-                imageCard = { _ ->
-                    Card(
-                        modifier = Modifier
-                            .height(baseHeight)
-                            .aspectRatio(16f / 9f),
-                        interactionSource = interactionSource,
-                        border = CardDefaults.border(
-                            focusedBorder = Border(
-                                border = BorderStroke(3.dp, Color.White),
-                            )
-                        ),
-                        scale = CardDefaults.scale(
-                            focusedScale = if (areAnimationsEnabled) 1.05f else 1.0f
-                        ),
-                        onClick = {
-                            if (onClick != null) {
-                                onClick()
-                            } else {
-                                launchIntent?.let { intent ->
-                                    context.startActivity(intent)
-                                }
-                            }
-                        },
-                        onLongClick = {
-                            if (hasPopupContent) {
-                                menuVisible = true
+                    ),
+                    scale = CardDefaults.scale(
+                        focusedScale = if (areAnimationsEnabled) 1.05f else 1.0f
+                    ),
+                    onClick = {
+                        if (onClick != null) {
+                            onClick()
+                        } else {
+                            launchIntent?.let { intent ->
+                                context.startActivity(intent)
                             }
                         }
-                    ) {
-                        AsyncImage(
-                            modifier = Modifier.fillMaxSize(),
-                            model = imageRequest,
-                            contentDescription = app.displayName,
-                            contentScale = ContentScale.Fit,
-                        )
+                    },
+                    onLongClick = {
+                        if (hasPopupContent) {
+                            menuVisible = true
+                        }
                     }
+                ) {
+                    AsyncImage(
+                        modifier = Modifier.fillMaxSize(),
+                        model = imageRequest,
+                        contentDescription = app.displayName,
+                        contentScale = ContentScale.Fit,
+                    )
                 }
-            )
+
+                Column(
+                    modifier = Modifier.padding(top = 6.dp)
+                ) {
+                    FocusMarqueeText(
+                        text = app.displayName,
+                        focused = isFocused && areAnimationsEnabled,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    )
+                }
+            }
         },
         popupContent = {
             if (popupContent != null) popupContent()

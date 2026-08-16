@@ -145,7 +145,7 @@ fun MoveableAppCard(
         visible = menuVisible && !isInMoveMode,
         onDismiss = { menuVisible = false },
         content = {
-            StandardCardContainer(
+            Column(
                 modifier = modifier
                     .width(cardWidth)
                     .onPreviewKeyEvent { event ->
@@ -201,69 +201,66 @@ fun MoveableAppCard(
                             }
                         }
                         false
-                    },
-                interactionSource = interactionSource,
-                title = {
-                    Column(
-                        modifier = Modifier.padding(top = 6.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        FocusMarqueeText(
-                            text = app.displayName,
-                            focused = isFocused && !isInMoveMode && areAnimationsEnabled,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        )
                     }
-                },
-                imageCard = { _ ->
-                    Card(
-                        modifier = Modifier
-                            .height(baseHeight)
-                            .aspectRatio(16f / 9f),
-                        interactionSource = interactionSource,
-                        border = CardDefaults.border(
-                            focusedBorder = Border(
-                                border = BorderStroke(
-                                    borderWidth,
-                                    borderColor ?: Color.White
-                                ),
-                            )
-                        ),
-                        scale = CardDefaults.scale(
-                            focusedScale = if (areAnimationsEnabled && !isInMoveMode) 1.05f else 1.0f
-                        ),
-                        onClick = {
-                            if (!isInMoveMode) {
-                                if (onClick != null) {
-                                    onClick()
-                                } else {
-                                    launchIntent?.let { intent ->
-                                        try {
-                                            context.startActivity(intent)
-                                        } catch (e: Exception) {
-                                            Timber.e(e, "MoveableAppCard: Failed to launch app")
-                                        }
+            ) {
+                Card(
+                    modifier = Modifier
+                        .height(baseHeight)
+                        .aspectRatio(16f / 9f),
+                    interactionSource = interactionSource,
+                    border = CardDefaults.border(
+                        focusedBorder = Border(
+                            border = BorderStroke(
+                                borderWidth,
+                                borderColor ?: Color.White
+                            ),
+                        )
+                    ),
+                    scale = CardDefaults.scale(
+                        focusedScale = if (areAnimationsEnabled && !isInMoveMode) 1.05f else 1.0f
+                    ),
+                    onClick = {
+                        if (!isInMoveMode) {
+                            if (onClick != null) {
+                                onClick()
+                            } else {
+                                launchIntent?.let { intent ->
+                                    try {
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        Timber.e(e, "MoveableAppCard: Failed to launch app")
                                     }
                                 }
                             }
-                        },
-                        onLongClick = {
-                            if (!isInMoveMode) {
-                                menuVisible = true
-                            }
                         }
-                    ) {
-                        AsyncImage(
-                            modifier = Modifier.fillMaxSize(),
-                            model = imageRequest,
-                            contentDescription = app.displayName,
-                            contentScale = ContentScale.Fit,
-                        )
+                    },
+                    onLongClick = {
+                        if (!isInMoveMode) {
+                            menuVisible = true
+                        }
                     }
+                ) {
+                    AsyncImage(
+                        modifier = Modifier.fillMaxSize(),
+                        model = imageRequest,
+                        contentDescription = app.displayName,
+                        contentScale = ContentScale.Fit,
+                    )
                 }
-            )
+
+                Column(
+                    modifier = Modifier.padding(top = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    FocusMarqueeText(
+                        text = app.displayName,
+                        focused = isFocused && !isInMoveMode && areAnimationsEnabled,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    )
+                }
+            }
         },
         popupContent = {
             AppOptionsPopup(

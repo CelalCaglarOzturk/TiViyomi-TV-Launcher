@@ -1,5 +1,6 @@
 package dev.mudrock.tiviyomitvlauncher.ui.tab.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
@@ -46,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.tv.material3.Border
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.Icon
@@ -82,6 +84,7 @@ fun HomeTab(
     val allAppsMap by viewModel.allAppsMap.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val channels by viewModel.channels.collectAsStateWithLifecycle()
+    val channelRows by viewModel.channelRows.collectAsStateWithLifecycle()
     val allAppChannels by viewModel.allAppChannels.collectAsStateWithLifecycle()
     val appCardSize by viewModel.appCardSize.collectAsStateWithLifecycle()
     val channelCardSize by viewModel.channelCardSize.collectAsStateWithLifecycle()
@@ -188,113 +191,83 @@ fun HomeTab(
             }
 
         itemsIndexed(
-            items = enabledChannels,
-            key = { _, channel -> channel.id },
+            items = channelRows,
+            key = { _, rowData -> rowData.channel.id },
             contentType = { _, _ -> "channel_row" }
-        ) { index, channel ->
-            // Cache app lookup to avoid repeated filtering
-            val app = remember(channel.packageName, allAppsMap) {
-                allAppsMap[channel.packageName]
-            }
-            val programs by remember(channel.id) {
-                viewModel.channelPrograms(channel.id)
-            }.collectAsStateWithLifecycle()
-            val isWatchNext = remember(channel.type) { channel.type == ChannelType.WATCH_NEXT }
-
-            // Early return if not displayable - memoize the condition check
-            val shouldDisplay = remember(isWatchNext, app, hasAppChannels) {
-                if (isWatchNext && !hasAppChannels) {
-                    false
-                } else {
-                    isWatchNext || app != null
-                }
+        ) { index, rowData ->
+            val channel = rowData.channel
+            val isWatchNext = rowData.isWatchNext
+            val displayTitle = if (isWatchNext) {
+                stringResource(R.string.channel_watch_next)
+            } else {
+                stringResource(R.string.channel_preview, rowData.titlePair!!.first, rowData.titlePair.second)
             }
 
-            if (shouldDisplay) {
-                // Memoize the title computation
-                val title = remember(isWatchNext, app?.displayName, channel.displayName, channel.packageName) {
-                    if (isWatchNext) {
-                        null // Will use string resource
-                    } else {
-                        (app?.displayName ?: channel.packageName) to channel.displayName
+            val focusRequester = remember(channel.id) {
+                focusRequesters.getOrPut(channel.id) { FocusRequester() }
+            }
+
+            LaunchedEffect(focusedChannelId) {
+                if (focusedChannelId == channel.id) {
+                    try {
+                        focusRequester.requestFocus()
+                        focusedChannelId = null
+                    } catch (e: Exception) {
+                        // Ignore
                     }
                 }
+            }
 
-                val displayTitle = if (isWatchNext) {
-                    stringResource(R.string.channel_watch_next)
-                } else {
-                    stringResource(R.string.channel_preview, title!!.first, title.second)
+            val onToggleEnabled = remember(channel, viewModel) {
+                { enabled: Boolean ->
+                    focusedChannelId = channel.id
+                    viewModel.setChannelEnabled(channel, enabled)
+                    Unit
                 }
+            }
 
-                // Memoize size values
-                val enabledChannelsSize = remember(enabledChannels) { enabledChannels.size }
-
-                val focusRequester = remember(channel.id) {
-                    focusRequesters.getOrPut(channel.id) { FocusRequester() }
+            val onMoveUp = remember(channel, viewModel) {
+                {
+                    viewModel.moveChannelUp(channel)
+                    Unit
                 }
+            }
 
-                LaunchedEffect(focusedChannelId) {
-                    if (focusedChannelId == channel.id) {
-                        try {
-                            focusRequester.requestFocus()
-                            focusedChannelId = null
-                        } catch (e: Exception) {
-                            // Ignore
-                        }
-                    }
+            val onMoveDown = remember(channel, viewModel) {
+                {
+                    viewModel.moveChannelDown(channel)
+                    Unit
                 }
+            }
 
-                val onToggleEnabled = remember(channel, viewModel) {
-                    { enabled: Boolean ->
-                        focusedChannelId = channel.id
-                        viewModel.setChannelEnabled(channel, enabled)
+            val onRemoveProgram: ((dev.mudrock.tiviyomitvlauncher.data.sqldelight.ChannelProgram) -> Unit)? = if (isWatchNext) {
+                remember(viewModel) {
+                    { program ->
+                        viewModel.removeWatchNextProgram(program.id)
                         Unit
                     }
                 }
+            } else null
 
-                val onMoveUp = remember(channel, viewModel) {
-                    {
-                        viewModel.moveChannelUp(channel)
-                        Unit
+            ChannelProgramCardRow(
+                modifier = Modifier
+                    .focusRequester(focusRequester)
+                    .let {
+                        if (index == 0 && apps.isEmpty()) it.focusRequester(
+                            firstItemFocusRequester
+                        ) else it
                     }
-                }
-
-                val onMoveDown = remember(channel, viewModel) {
-                    {
-                        viewModel.moveChannelDown(channel)
-                        Unit
-                    }
-                }
-
-                val onRemoveProgram: ((dev.mudrock.tiviyomitvlauncher.data.sqldelight.ChannelProgram) -> Unit)? = if (isWatchNext) {
-                    remember(viewModel) {
-                        { program ->
-                            viewModel.removeWatchNextProgram(program.id)
-                            Unit
-                        }
-                    }
-                } else null
-
-                ChannelProgramCardRow(
-                    modifier = Modifier
-                        .focusRequester(focusRequester)
-                        .let {
-                            if (index == 0 && apps.isEmpty()) it.focusRequester(
-                                firstItemFocusRequester
-                            ) else it
-                        }
-                        .focusGroup()
-                        .then(if (areMoveAnimationsEnabled) Modifier.animateItem() else Modifier),
-                    title = displayTitle,
-                    programs = programs,
-                    channel = channel,
-                    baseHeight = channelCardSize.dp,
-                    onToggleEnabled = onToggleEnabled,
-                    onMoveUp = onMoveUp,
-                    onMoveDown = onMoveDown,
-                    onRemoveProgram = onRemoveProgram
-                )
-            }
+                    .focusGroup()
+                    .then(if (areMoveAnimationsEnabled) Modifier.animateItem() else Modifier),
+                title = displayTitle,
+                programs = rowData.programs,
+                channel = channel,
+                baseHeight = channelCardSize.dp,
+                onToggleEnabled = onToggleEnabled,
+                onMoveUp = onMoveUp,
+                onMoveDown = onMoveDown,
+                onRemoveProgram = onRemoveProgram
+            )
         }
 
         // Show placeholder when there are no app channels (Watch Next won't exist either)
@@ -390,54 +363,53 @@ private fun DisabledChannelCard(
     onEnable: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    StandardCardContainer(
+    Card(
+        onClick = onEnable,
         modifier = modifier.width(200.dp),
-        imageCard = { interactionSource ->
-            Card(
-                onClick = onEnable,
-                interactionSource = interactionSource,
-                colors = CardDefaults.colors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
+        colors = CardDefaults.colors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        border = CardDefaults.border(
+            focusedBorder = Border(
+                border = BorderStroke(2.dp, Color.White),
+            )
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = channel.displayName,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = appName,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+            Spacer(modifier = Modifier.padding(vertical = 8.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = channel.displayName,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = appName,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.padding(vertical = 8.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = stringResource(R.string.channel_enable),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.channel_enable),
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringResource(R.string.channel_enable),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = stringResource(R.string.channel_enable),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
-        },
-        title = { }
-    )
+        }
+    }
 }
 
 

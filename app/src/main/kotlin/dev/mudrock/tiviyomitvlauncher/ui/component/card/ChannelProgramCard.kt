@@ -123,96 +123,93 @@ fun ChannelProgramCard(
         }
     }
 
-    StandardCardContainer(
-        modifier = modifier.width(cardWidth),
-        interactionSource = interactionSource,
-        title = {
-            if (hasTitle) {
-                Column(
-                    modifier = Modifier.padding(top = 6.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    FocusMarqueeText(
-                        text = program.title!!,
-                        focused = isFocused && enableAnimations && !isMoving,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold
-                        )
+    Column(
+        modifier = modifier.width(cardWidth)
+    ) {
+        Card(
+            modifier = Modifier
+                .height(baseHeight)
+                .aspectRatio(aspectRatio),
+            interactionSource = interactionSource,
+            colors = CardDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
+            border = CardDefaults.border(
+                focusedBorder = Border(
+                    border = BorderStroke(3.dp, Color.White),
+                )
+            ),
+            scale = CardDefaults.scale(
+                focusedScale = if (enableAnimations) 1.05f else 1.0f
+            ),
+            onClick = {
+                launchIntent?.let { intent ->
+                    context.startActivity(intent)
+                }
+            },
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                AsyncImage(
+                    modifier = Modifier.fillMaxSize(),
+                    model = imageRequest,
+                    contentDescription = program.title,
+                    contentScale = ContentScale.Crop,
+                )
+
+                if (progress != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .align(Alignment.BottomStart)
+                            .background(Color.Black.copy(alpha = 0.5f))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progress)
+                            .height(4.dp)
+                            .align(Alignment.BottomStart)
+                            .background(Color.Red)
                     )
                 }
-            }
-        },
-        imageCard = { _ ->
-            Card(
-                modifier = Modifier
-                    .height(baseHeight)
-                    .aspectRatio(aspectRatio),
-                interactionSource = interactionSource,
-                colors = CardDefaults.colors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
-                border = CardDefaults.border(
-                    focusedBorder = Border(
-                        border = BorderStroke(3.dp, Color.White),
-                    )
-                ),
-                scale = CardDefaults.scale(
-                    focusedScale = if (enableAnimations) 1.05f else 1.0f
-                ),
-                onClick = {
-                    launchIntent?.let { intent ->
-                        context.startActivity(intent)
-                    }
-                },
-            ) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    AsyncImage(
-                        modifier = Modifier.fillMaxSize(),
-                        model = imageRequest,
-                        contentDescription = program.title,
-                        contentScale = ContentScale.Crop,
-                    )
-
-                    if (progress != null) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(4.dp)
-                                .align(Alignment.BottomStart)
-                                .background(Color.Black.copy(alpha = 0.5f))
+                
+                if (isMoving) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .drawBehind {
+                                drawRoundRect(
+                                    color = Color.Black.copy(alpha = 0.7f),
+                                    cornerRadius = CornerRadius(0.dp.toPx())
+                                )
+                            }
+                    ) {
+                        Text(
+                            text = stringResource(R.string.channel_moving_instructions),
+                            color = Color.White,
+                            fontSize = with(LocalDensity.current) { (baseHeight.value / 10).toInt().dp.toSp() },
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.align(Alignment.Center)
                         )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(progress)
-                                .height(4.dp)
-                                .align(Alignment.BottomStart)
-                                .background(Color.Red)
-                        )
-                    }
-                    
-                    if (isMoving) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .drawBehind {
-                                    drawRoundRect(
-                                        color = Color.Black.copy(alpha = 0.7f),
-                                        cornerRadius = CornerRadius(0.dp.toPx())
-                                    )
-                                }
-                        ) {
-                            Text(
-                                text = stringResource(R.string.channel_moving_instructions),
-                                color = Color.White,
-                                fontSize = with(LocalDensity.current) { (baseHeight.value / 10).toInt().dp.toSp() },
-                                fontWeight = FontWeight.Medium,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        }
                     }
                 }
             }
         }
-    )
+
+        if (hasTitle) {
+            Column(
+                modifier = Modifier.padding(top = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                FocusMarqueeText(
+                    text = program.title!!,
+                    focused = isFocused && enableAnimations && !isMoving,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    )
+                )
+            }
+        }
+    }
 }

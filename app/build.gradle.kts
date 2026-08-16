@@ -57,6 +57,7 @@ dependencies {
 	implementation(libs.bundles.androidx.core)
 	implementation(libs.bundles.koin)
 	implementation(libs.androidx.tvprovider)
+	implementation(libs.androidx.profileinstaller)
 	implementation(libs.timber)
 
 	// Data
