@@ -41,7 +41,8 @@ class AppIconFetcher(
             val w = width.px
             val h = height.px
             if (w > 0 && h > 0) {
-                val bitmap = createBitmap(w, h)
+                val config = if (options.allowRgb565) android.graphics.Bitmap.Config.RGB_565 else android.graphics.Bitmap.Config.ARGB_8888
+                val bitmap = createBitmap(w, h, config)
                 val canvas = android.graphics.Canvas(bitmap)
                 drawable.setBounds(0, 0, w, h)
                 drawable.draw(canvas)

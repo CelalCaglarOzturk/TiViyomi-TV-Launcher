@@ -81,17 +81,30 @@ class LauncherApplication : Application(), ImageLoaderFactory, ComponentCallback
     }
 
     override fun newImageLoader(): ImageLoader {
-        val isLowRam = isLowRamDevice()
-        // Dynamic memory cache sizing: 10% for low-RAM TV devices, 20% for standard devices
-        val memoryCachePercent = if (isLowRam) 0.10 else 0.20
-        // Dynamic disk cache limit (no fixed 100MB static allocation): 20MB for low-RAM, 50MB for standard
-        val diskCacheMaxBytes = if (isLowRam) 20L * 1024 * 1024 else 50L * 1024 * 1024
+        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        val memoryInfo = ActivityManager.MemoryInfo()
+        activityManager?.getMemoryInfo(memoryInfo)
+        val totalRamMb = memoryInfo.totalMem / (1024 * 1024)
+
+        // Dynamic memory cache sizing matching Nuvio's TV profile:
+        // Low-RAM devices (≤2GB): 12% - keeps rows cached without high GC pressure
+        // Mid-range devices (≤3GB): 25% - fast smooth scrolling cache
+        // Normal devices (>3GB): 20%
+        val memoryCachePercent = when {
+            totalRamMb <= 2048 -> 0.12
+            totalRamMb <= 3072 -> 0.25
+            else -> 0.20
+        }
+        val diskCacheMaxBytes = when {
+            totalRamMb <= 2048 -> 50L * 1024 * 1024
+            else -> 150L * 1024 * 1024
+        }
 
         val loader = ImageLoader.Builder(this)
             .memoryCache {
                 coil.memory.MemoryCache.Builder(this)
                     .maxSizePercent(memoryCachePercent)
-                    .strongReferencesEnabled(false) // Allow GC under memory pressure
+                    .strongReferencesEnabled(true) // Keep strong references so bitmaps survive GC while scrolling
                     .build()
             }
             .diskCache {
@@ -106,15 +119,19 @@ class LauncherApplication : Application(), ImageLoaderFactory, ComponentCallback
                 // Register fetcher for loading app icons
                 add(AppIconFetcher.Factory(this@LauncherApplication))
             }
+            .crossfade(false)
+            .precision(coil.size.Precision.INEXACT)
+            .allowHardware(true)
+            .allowRgb565(true)
             .apply {
-                if (isLowRam) {
+                if (totalRamMb <= 2048) {
                     bitmapConfig(Bitmap.Config.RGB_565)
                 }
                 if (BuildConfig.DEBUG) {
                     logger(DebugLogger())
                 }
             }
-            // App icons don't have HTTP cache headers
+            // App icons and preview channel artwork don't have HTTP cache headers
             .respectCacheHeaders(false)
             .build()
 

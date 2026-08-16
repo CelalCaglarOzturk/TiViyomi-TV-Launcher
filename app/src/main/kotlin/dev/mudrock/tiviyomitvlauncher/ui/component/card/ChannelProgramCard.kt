@@ -79,18 +79,20 @@ fun ChannelProgramCard(
 
     // Memoize the image request to prevent recreating on every recomposition
     // Key on posterArtUri to ensure we reload if the image changes
-    val imageRequest = remember(program.posterArtUri, context, enableAnimations, requestWidth, requestHeight) {
+    val imageRequest = remember(program.posterArtUri, program.id, context, requestWidth, requestHeight) {
         ImageRequest.Builder(context)
             .data(program.posterArtUri)
             // Include the URI in the cache key so that when a channel app updates
             // its artwork (same program ID, different content) the Refresh button
             // correctly busts the cache and loads the new image.
-            .memoryCacheKey("program:${program.id}:${program.posterArtUri}")
-            .diskCacheKey("program:${program.id}:${program.posterArtUri}")
+            .memoryCacheKey("program:${program.id}:${program.posterArtUri}_${requestWidth}x${requestHeight}")
+            .diskCacheKey("program:${program.id}:${program.posterArtUri}_${requestWidth}x${requestHeight}")
             .memoryCachePolicy(CachePolicy.ENABLED)
             .diskCachePolicy(CachePolicy.ENABLED)
             .allowHardware(true)
-            .crossfade(enableAnimations)
+            .allowRgb565(true)
+            .crossfade(false)
+            .precision(coil.size.Precision.INEXACT)
             .size(requestWidth, requestHeight)
             .build()
     }

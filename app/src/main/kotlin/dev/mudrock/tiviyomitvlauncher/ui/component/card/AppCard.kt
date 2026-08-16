@@ -92,14 +92,17 @@ fun AppCard(
 
     // Memoize the image request to prevent recreating on every recomposition
     // Key on app.id since that uniquely identifies the app and its icon
-    val imageRequest = remember(app.id, context, areAnimationsEnabled, requestWidth, requestHeight) {
+    val imageRequest = remember(app.id, context, requestWidth, requestHeight) {
         ImageRequest.Builder(context)
             .data(app)
-            .memoryCacheKey("app_icon:${app.id}")
-            .diskCacheKey("app_icon:${app.id}")
+            .memoryCacheKey("app_icon:${app.id}:${requestWidth}x${requestHeight}")
+            .diskCacheKey("app_icon:${app.id}:${requestWidth}x${requestHeight}")
             .memoryCachePolicy(CachePolicy.ENABLED)
             .diskCachePolicy(CachePolicy.ENABLED)
-            .crossfade(areAnimationsEnabled)
+            .allowHardware(true)
+            .allowRgb565(true)
+            .crossfade(false)
+            .precision(coil.size.Precision.INEXACT)
             .size(requestWidth, requestHeight)
             .build()
     }

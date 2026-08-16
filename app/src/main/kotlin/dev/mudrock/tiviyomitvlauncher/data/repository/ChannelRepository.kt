@@ -118,17 +118,9 @@ class ChannelRepository(
         _isRefreshing.value = true
         try {
             Timber.d("Refreshing all channels")
-            withContext(Dispatchers.Main) {
-                try {
-                    coil.Coil.imageLoader(context).memoryCache?.clear()
-                } catch (e: Exception) {
-                    Timber.w(e, "Failed to clear Coil memory cache on refresh")
-                }
-            }
             refreshWatchNextChannels()
             refreshPreviewChannels()
 
-            // Images are loaded lazily on demand by UI components to minimize RAM consumption
             Timber.d("All channels refreshed")
         } finally {
             _isRefreshing.value = false
