@@ -13,7 +13,7 @@ Ldev/mudrock/tiviyomitvlauncher/ui/component/FocusMarqueeTextKt;
 Ldev/mudrock/tiviyomitvlauncher/ui/component/card/AppCardKt;
 Ldev/mudrock/tiviyomitvlauncher/ui/component/card/MoveableAppCardKt;
 Ldev/mudrock/tiviyomitvlauncher/ui/component/card/ChannelProgramCardKt;
-Ldev/mudrock/tiviyomitvlauncher/ui/util/NuvioScrollDefaults;
+Ldev/mudrock/tiviyomitvlauncher/ui/util/TvScrollDefaults;
 Ldev/mudrock/tiviyomitvlauncher/data/repository/AppRepository;
 Ldev/mudrock/tiviyomitvlauncher/data/repository/ChannelRepository;
 Ldev/mudrock/tiviyomitvlauncher/image/AppIconFetcher;

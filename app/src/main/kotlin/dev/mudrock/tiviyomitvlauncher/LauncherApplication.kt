@@ -86,7 +86,7 @@ class LauncherApplication : Application(), ImageLoaderFactory, ComponentCallback
         activityManager?.getMemoryInfo(memoryInfo)
         val totalRamMb = memoryInfo.totalMem / (1024 * 1024)
 
-        // Dynamic memory cache sizing matching Nuvio's TV profile:
+        // Dynamic memory cache sizing for TV profile:
         // Low-RAM devices (≤2GB): 12% - keeps rows cached without high GC pressure
         // Mid-range devices (≤3GB): 25% - fast smooth scrolling cache
         // Normal devices (>3GB): 20%

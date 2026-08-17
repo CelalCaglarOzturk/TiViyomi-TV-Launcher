@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
-import dev.mudrock.tiviyomitvlauncher.ui.util.NuvioScrollDefaults
+import dev.mudrock.tiviyomitvlauncher.ui.util.TvScrollDefaults
 import dev.mudrock.tiviyomitvlauncher.ui.util.dpadRepeatThrottle
 
 @OptIn(ExperimentalComposeUiApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
@@ -69,7 +69,7 @@ fun CardRow(
 
         val childFocusRequester = remember { FocusRequester() }
 
-        CompositionLocalProvider(LocalBringIntoViewSpec provides NuvioScrollDefaults.smoothScrollSpec) {
+        CompositionLocalProvider(LocalBringIntoViewSpec provides TvScrollDefaults.smoothScrollSpec) {
             LazyRow(
                 state = state,
                 contentPadding = PaddingValues(

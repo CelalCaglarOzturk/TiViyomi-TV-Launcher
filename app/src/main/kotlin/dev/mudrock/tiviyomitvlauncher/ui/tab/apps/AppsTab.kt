@@ -1,5 +1,10 @@
 package dev.mudrock.tiviyomitvlauncher.ui.tab.apps
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -22,7 +27,9 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -39,11 +46,13 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import dev.mudrock.tiviyomitvlauncher.R
 import dev.mudrock.tiviyomitvlauncher.data.repository.SettingsRepository
+import dev.mudrock.tiviyomitvlauncher.ui.component.LoadingIndicator
 import dev.mudrock.tiviyomitvlauncher.ui.component.card.AppCard
 import dev.mudrock.tiviyomitvlauncher.ui.component.card.MoveableAppCard
 import dev.mudrock.tiviyomitvlauncher.util.FocusController
 import dev.mudrock.tiviyomitvlauncher.util.MoveDirection
 import dev.mudrock.tiviyomitvlauncher.ui.util.dpadRepeatThrottle
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
@@ -116,7 +125,65 @@ fun AppsTab(
         focusRequesters.keys.retainAll(currentAppIds)
     }
 
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+    var appsGateReleased by rememberSaveable { mutableStateOf(false) }
+    var showAppsContentWithAnimation by rememberSaveable { mutableStateOf(false) }
+    var hasShownInitialAppsContent by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(hasApps, hasHiddenApps) {
+        if (!appsGateReleased && (hasApps || hasHiddenApps)) {
+            appsGateReleased = true
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        delay(3500L)
+        if (!appsGateReleased) {
+            appsGateReleased = true
+        }
+    }
+
+    val showAppsLoader = !appsGateReleased && !hasApps && !hasHiddenApps
+
+    Box(
+        modifier = modifier.fillMaxSize()
+    ) {
+        if (!showAppsLoader) {
+            LaunchedEffect(Unit) {
+                if (!showAppsContentWithAnimation) {
+                    kotlinx.coroutines.yield()
+                    showAppsContentWithAnimation = true
+                }
+            }
+            LaunchedEffect(showAppsContentWithAnimation) {
+                if (showAppsContentWithAnimation) {
+                    hasShownInitialAppsContent = true
+                }
+            }
+
+            LaunchedEffect(showAppsContentWithAnimation, isActive) {
+                if (showAppsContentWithAnimation && isActive) {
+                    try {
+                        firstItemFocusRequester.requestFocus()
+                    } catch (e: Exception) {
+                        // Ignore
+                    }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = showAppsContentWithAnimation,
+                enter = if (hasShownInitialAppsContent) {
+                    EnterTransition.None
+                } else {
+                    fadeIn(animationSpec = tween(320)) +
+                        slideInVertically(
+                            initialOffsetY = { it / 24 },
+                            animationSpec = tween(320)
+                        )
+                },
+                modifier = Modifier.fillMaxSize()
+            ) {
+                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val density = LocalDensity.current
 
         val itemMinWidth = remember(appCardSize) { appCardSize.dp * (16f / 9f) }
@@ -138,7 +205,7 @@ fun AppsTab(
         }
 
         androidx.compose.runtime.CompositionLocalProvider(
-            androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides dev.mudrock.tiviyomitvlauncher.ui.util.NuvioScrollDefaults.smoothScrollSpec
+            androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides dev.mudrock.tiviyomitvlauncher.ui.util.TvScrollDefaults.smoothScrollSpec
         ) {
             LazyVerticalGrid(
                 state = listState,
@@ -304,4 +371,16 @@ fun AppsTab(
         }
     }
 }
+            }
+        }
+
+        if (showAppsLoader) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                LoadingIndicator()
+            }
+        }
+    }
 }

@@ -42,7 +42,7 @@ class AppRepository(
                     if (isNewApp || existing!!.displayName != app.displayName ||
                         existing.launchIntentUriDefault != app.launchIntentUriDefault ||
                         existing.launchIntentUriLeanback != app.launchIntentUriLeanback) {
-                        commitApp(app, isNewApp)
+                        commitApp(app, isNewApp, hasAllAppsOrder = existing?.allAppsOrder != null)
                     }
                 }
             }
@@ -54,7 +54,7 @@ class AppRepository(
         }
     }
 
-    private fun commitApp(app: App, addToFavorites: Boolean = false) {
+    private fun commitApp(app: App, addToFavorites: Boolean = false, hasAllAppsOrder: Boolean = false) {
         try {
             database.apps.upsert(
                 displayName = app.displayName,
@@ -77,9 +77,11 @@ class AppRepository(
             }
 
             // Ensure all apps have an order in the all apps list
-            val currentApp = database.apps.getById(app.id).executeAsOne()
-            if (currentApp.allAppsOrder == null) {
-                database.apps.updateAllAppsOrderAdd(app.id)
+            if (!hasAllAppsOrder) {
+                val currentApp = database.apps.getById(app.id).executeAsOneOrNull()
+                if (currentApp?.allAppsOrder == null) {
+                    database.apps.updateAllAppsOrderAdd(app.id)
+                }
             }
         } catch (e: Exception) {
             Timber.e(e, "AppRepository: Error upserting app ${app.packageName}")

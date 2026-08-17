@@ -148,7 +148,7 @@ fun ChannelProgramCardRow(
                         }
 
                         androidx.compose.runtime.CompositionLocalProvider(
-                            androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides dev.mudrock.tiviyomitvlauncher.ui.util.NuvioScrollDefaults.smoothScrollSpec
+                            androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides dev.mudrock.tiviyomitvlauncher.ui.util.TvScrollDefaults.smoothScrollSpec
                         ) {
                             LazyRow(
                                 state = state,

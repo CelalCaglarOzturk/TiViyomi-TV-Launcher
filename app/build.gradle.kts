@@ -91,6 +91,7 @@ dependencies {
 	implementation(libs.androidx.tv.material)
 	implementation(libs.material.icons.extended)
 	implementation(libs.coil.compose)
+	implementation(libs.lottie.compose)
 	debugImplementation(libs.androidx.compose.ui.tooling)
 
 	// Testing

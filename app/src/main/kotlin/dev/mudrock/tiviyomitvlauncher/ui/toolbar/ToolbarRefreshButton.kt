@@ -1,10 +1,5 @@
 package dev.mudrock.tiviyomitvlauncher.ui.toolbar
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +18,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -37,6 +31,7 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import dev.mudrock.tiviyomitvlauncher.R
 import dev.mudrock.tiviyomitvlauncher.data.repository.ChannelRepository
+import dev.mudrock.tiviyomitvlauncher.ui.component.LoadingIndicator
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -47,25 +42,21 @@ fun ToolbarRefreshButton() = Box {
     val scope = rememberCoroutineScope()
     var showConfirmDialog by remember { mutableStateOf(false) }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "refreshRotation")
-    val rotationAngle by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1000, easing = LinearEasing)
-        ),
-        label = "rotationAngle"
-    )
-
     IconButton(
         onClick = { if (!isRefreshing) showConfirmDialog = true },
         enabled = !isRefreshing
     ) {
-        Icon(
-            imageVector = Icons.Filled.Refresh,
-            contentDescription = stringResource(id = R.string.toolbar_refresh),
-            modifier = if (isRefreshing) Modifier.rotate(rotationAngle) else Modifier
-        )
+        if (isRefreshing) {
+            dev.mudrock.tiviyomitvlauncher.ui.component.LoadingIndicator(
+                size = 20.dp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Filled.Refresh,
+                contentDescription = stringResource(id = R.string.toolbar_refresh)
+            )
+        }
     }
 
     if (showConfirmDialog) {

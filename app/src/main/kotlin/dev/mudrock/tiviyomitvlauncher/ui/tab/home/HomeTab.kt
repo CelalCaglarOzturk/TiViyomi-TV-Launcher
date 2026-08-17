@@ -1,5 +1,11 @@
 package dev.mudrock.tiviyomitvlauncher.ui.tab.home
 
+import androidx.activity.compose.ReportDrawnWhen
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -30,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -72,9 +79,11 @@ import androidx.compose.ui.platform.LocalDensity
 import coil.Coil
 import coil.request.ImageRequest
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.withContext
+import dev.mudrock.tiviyomitvlauncher.ui.component.LoadingIndicator
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class, kotlinx.coroutines.FlowPreview::class)
 @Composable
@@ -217,25 +226,92 @@ fun HomeTab(
         }
     }
 
-    androidx.compose.runtime.CompositionLocalProvider(
-        androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides dev.mudrock.tiviyomitvlauncher.ui.util.NuvioScrollDefaults.smoothScrollSpec
+    val hasAnyContent by remember {
+        derivedStateOf {
+            apps.isNotEmpty() || channelRows.isNotEmpty() || allAppChannels.isNotEmpty()
+        }
+    }
+
+    var showHomeContentWithAnimation by rememberSaveable { mutableStateOf(false) }
+    var hasShownInitialHomeContent by rememberSaveable { mutableStateOf(false) }
+    var homeStableGateReleased by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(hasAnyContent) {
+        if (!homeStableGateReleased && hasAnyContent) {
+            homeStableGateReleased = true
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        // Safety timeout — if channels and apps haven't loaded within this window, show whatever is available.
+        delay(3500L)
+        if (!homeStableGateReleased) {
+            homeStableGateReleased = true
+        }
+    }
+
+    val showStartupLoader = !homeStableGateReleased && !hasAnyContent
+
+    ReportDrawnWhen { !showStartupLoader }
+
+    Box(
+        modifier = modifier.fillMaxSize()
     ) {
-        LazyColumn(
-            state = listState,
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            modifier = modifier
-                .fillMaxSize()
-                .dpadVerticalFastScroll(scrollableState = listState)
-                .focusProperties {
-                    onEnter = {
-                        if (requestedFocusDirection == FocusDirection.Down) {
-                            firstItemFocusRequester
-                        } else {
-                            FocusRequester.Default
-                        }
+        if (!showStartupLoader) {
+            LaunchedEffect(Unit) {
+                if (!showHomeContentWithAnimation) {
+                    kotlinx.coroutines.yield()
+                    showHomeContentWithAnimation = true
+                }
+            }
+            LaunchedEffect(showHomeContentWithAnimation) {
+                if (showHomeContentWithAnimation) {
+                    hasShownInitialHomeContent = true
+                }
+            }
+
+            LaunchedEffect(showHomeContentWithAnimation, isActive) {
+                if (showHomeContentWithAnimation && isActive) {
+                    try {
+                        firstItemFocusRequester.requestFocus()
+                    } catch (e: Exception) {
+                        // Ignore focus request failure
                     }
                 }
-        ) {
+            }
+
+            AnimatedVisibility(
+                visible = showHomeContentWithAnimation,
+                enter = if (hasShownInitialHomeContent) {
+                    EnterTransition.None
+                } else {
+                    fadeIn(animationSpec = tween(320)) +
+                        slideInVertically(
+                            initialOffsetY = { it / 24 },
+                            animationSpec = tween(320)
+                        )
+                },
+                modifier = Modifier.fillMaxSize()
+            ) {
+                androidx.compose.runtime.CompositionLocalProvider(
+                    androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides dev.mudrock.tiviyomitvlauncher.ui.util.TvScrollDefaults.smoothScrollSpec
+                ) {
+                    LazyColumn(
+                        state = listState,
+                        verticalArrangement = Arrangement.spacedBy(0.dp),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .dpadVerticalFastScroll(scrollableState = listState)
+                            .focusProperties {
+                                onEnter = {
+                                    if (requestedFocusDirection == FocusDirection.Down) {
+                                        firstItemFocusRequester
+                                    } else {
+                                        FocusRequester.Default
+                                    }
+                                }
+                            }
+                    ) {
             item(
                 key = "apps",
                 contentType = "apps_row"
@@ -411,6 +487,18 @@ fun HomeTab(
         }
     }
 }
+            }
+        }
+
+        if (showStartupLoader) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                LoadingIndicator()
+            }
+        }
+    }
 }
 
 @Composable
