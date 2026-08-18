@@ -25,12 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.Brush
 import timber.log.Timber
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.nativeKeyCode
@@ -220,10 +216,7 @@ fun MoveableAppCard(
             Card(
                 modifier = Modifier
                     .height(baseHeight)
-                    .aspectRatio(16f / 9f)
-                    .graphicsLayer {
-                        clip = true
-                    },
+                    .aspectRatio(16f / 9f),
                 interactionSource = interactionSource,
                 border = cardBorder,
                 scale = cardScale,

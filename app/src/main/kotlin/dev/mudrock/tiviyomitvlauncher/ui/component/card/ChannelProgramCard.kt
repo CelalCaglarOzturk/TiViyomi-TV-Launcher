@@ -25,7 +25,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -146,10 +145,7 @@ fun ChannelProgramCard(
         Card(
             modifier = Modifier
                 .height(baseHeight)
-                .aspectRatio(aspectRatio)
-                .graphicsLayer {
-                    clip = true
-                },
+                .aspectRatio(aspectRatio),
             interactionSource = interactionSource,
             colors = cardColors,
             border = cardBorder,
