@@ -31,30 +31,43 @@ class AppIconFetcher(
 ) : Fetcher {
 
     override suspend fun fetch(): FetchResult = withContext(Dispatchers.IO) {
-        var drawable = loadAppIcon()
-
-        // Downsample if a specific size is requested
         val size = options.size
         val width = size.width
         val height = size.height
-        if (width is Dimension.Pixels && height is Dimension.Pixels) {
-            val w = width.px
-            val h = height.px
-            if (w > 0 && h > 0) {
-                val config = if (options.allowRgb565) android.graphics.Bitmap.Config.RGB_565 else android.graphics.Bitmap.Config.ARGB_8888
-                val bitmap = createBitmap(w, h, config)
-                val canvas = android.graphics.Canvas(bitmap)
-                drawable.setBounds(0, 0, w, h)
-                drawable.draw(canvas)
-                drawable = bitmap.toDrawable(context.resources)
+        val w = if (width is Dimension.Pixels) width.px else 0
+        val h = if (height is Dimension.Pixels) height.px else 0
+
+        val cacheKey = if (w > 0 && h > 0) "${app.id}_${w}x${h}" else app.id
+        
+        iconCache.get(cacheKey)?.let { cached ->
+            return@withContext DrawableResult(
+                drawable = cached,
+                isSampled = true,
+                dataSource = DataSource.MEMORY
+            )
+        }
+
+        val originalDrawable = loadAppIcon()
+
+        val finalDrawable = if (w > 0 && h > 0) {
+            val config = if (options.allowRgb565) android.graphics.Bitmap.Config.RGB_565 else android.graphics.Bitmap.Config.ARGB_8888
+            val bitmap = createBitmap(w, h, config)
+            val canvas = android.graphics.Canvas(bitmap)
+            synchronized(originalDrawable) {
+                originalDrawable.setBounds(0, 0, w, h)
+                originalDrawable.draw(canvas)
             }
+            val drawable = bitmap.toDrawable(context.resources)
+            iconCache.put(cacheKey, drawable)
+            drawable
+        } else {
+            iconCache.put(cacheKey, originalDrawable)
+            originalDrawable
         }
 
         DrawableResult(
-            drawable = drawable,
-			isSampled = true,
-            // Report MEMORY for settings icon (already in resources)
-            // Report DISK for app icons loaded from package manager (cached by system)
+            drawable = finalDrawable,
+            isSampled = true,
             dataSource = if (app.packageName == SETTINGS_PACKAGE_NAME) {
                 DataSource.MEMORY
             } else {
@@ -68,9 +81,6 @@ class AppIconFetcher(
         if (app.packageName == SETTINGS_PACKAGE_NAME) {
             return ContextCompat.getDrawable(context, R.drawable.ic_launcher)!!
         }
-
-        val cacheKey = app.packageName
-        iconCache.get(cacheKey)?.let { return it }
 
         val packageManager = context.packageManager
 
@@ -102,20 +112,21 @@ class AppIconFetcher(
             }
         } else null
 
-        val finalDrawable = loadedDrawable ?: packageManager.defaultActivityIcon
-        iconCache.put(cacheKey, finalDrawable)
-        return finalDrawable
+        return loadedDrawable ?: packageManager.defaultActivityIcon
     }
 
     /**
      * Keyer implementation for proper Coil caching.
-     * Uses the app ID as the cache key since that uniquely identifies the app.
+     * Uses the app ID and requested size as the cache key.
      */
     class AppKeyer : Keyer<App> {
         override fun key(data: App, options: Options): String {
-            // Use app ID as cache key - this is stable and unique per app
-            // Include size to support different requested sizes (e.g. focused vs unfocused)
-            return "app_icon:${data.id}:${options.size}"
+            val size = options.size
+            val width = size.width
+            val height = size.height
+            val w = if (width is Dimension.Pixels) width.px else 0
+            val h = if (height is Dimension.Pixels) height.px else 0
+            return if (w > 0 && h > 0) "app_icon:${data.id}:${w}x${h}" else "app_icon:${data.id}"
         }
     }
 
@@ -127,7 +138,7 @@ class AppIconFetcher(
 
     companion object {
         private const val SETTINGS_PACKAGE_NAME = "dev.mudrock.tiviyomitvlauncher.settings"
-        private val iconCache = android.util.LruCache<String, Drawable>(100)
+        private val iconCache = android.util.LruCache<String, Drawable>(120)
 
         fun clearIconCache() {
             iconCache.evictAll()

@@ -69,6 +69,7 @@ class LauncherActivity : ComponentActivity() {
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
+		window?.setBackgroundDrawable(null)
 
 		onboardingManager = OnboardingManager(this)
 		showOnboarding = !onboardingManager.isCompleted()

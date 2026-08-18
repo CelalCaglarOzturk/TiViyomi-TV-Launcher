@@ -101,6 +101,8 @@ class LauncherApplication : Application(), ImageLoaderFactory, ComponentCallback
         }
 
         val loader = ImageLoader.Builder(this)
+            .fetcherDispatcher(kotlinx.coroutines.Dispatchers.IO.limitedParallelism(4))
+            .decoderDispatcher(kotlinx.coroutines.Dispatchers.IO.limitedParallelism(4))
             .memoryCache {
                 coil.memory.MemoryCache.Builder(this)
                     .maxSizePercent(memoryCachePercent)

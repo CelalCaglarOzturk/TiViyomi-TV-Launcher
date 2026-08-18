@@ -30,6 +30,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
 import timber.log.Timber
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.nativeKeyCode
@@ -146,125 +147,134 @@ fun MoveableAppCard(
         )
     }
 
+    val cardBorder = CardDefaults.border(
+        focusedBorder = Border(
+            border = focusedBorderStroke,
+        )
+    )
+
+    val cardScale = CardDefaults.scale(
+        focusedScale = if (areAnimationsEnabled && !isInMoveMode) 1.05f else 1.0f
+    )
+
+    val cardContent = @Composable {
+        Column(
+            modifier = modifier
+                .width(cardWidth)
+                .zIndex(if (isFocused || isInMoveMode) 1f else 0f)
+                .onPreviewKeyEvent { event ->
+                    if (ignoreNextKeyUp && event.type == KeyEventType.KeyUp) {
+                        ignoreNextKeyUp = false
+                        return@onPreviewKeyEvent true
+                    }
+
+                    // Handle move mode key events
+                    if (isInMoveMode) {
+                        if (event.type == KeyEventType.KeyDown) {
+                            when (event.key.nativeKeyCode) {
+                                KeyEvent.KEYCODE_DPAD_LEFT -> {
+                                    onMove?.invoke(MoveDirection.LEFT)
+                                    return@onPreviewKeyEvent true
+                                }
+
+                                KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                                    onMove?.invoke(MoveDirection.RIGHT)
+                                    return@onPreviewKeyEvent true
+                                }
+
+                                KeyEvent.KEYCODE_DPAD_UP -> {
+                                    onMove?.invoke(MoveDirection.UP)
+                                    return@onPreviewKeyEvent true
+                                }
+
+                                KeyEvent.KEYCODE_DPAD_DOWN -> {
+                                    onMove?.invoke(MoveDirection.DOWN)
+                                    return@onPreviewKeyEvent true
+                                }
+
+                                KeyEvent.KEYCODE_DPAD_CENTER,
+                                KeyEvent.KEYCODE_ENTER -> {
+                                    onMoveModeChanged?.invoke(false)
+                                    ignoreNextKeyUp = true
+                                    return@onPreviewKeyEvent true
+                                }
+
+                                KeyEvent.KEYCODE_BACK -> {
+                                    onMoveModeChanged?.invoke(false)
+                                    return@onPreviewKeyEvent true
+                                }
+                            }
+                        } else if (event.type == KeyEventType.KeyUp) {
+                            // Consume KeyUp for Center/Enter to prevent click action
+                            when (event.key.nativeKeyCode) {
+                                KeyEvent.KEYCODE_DPAD_CENTER,
+                                KeyEvent.KEYCODE_ENTER -> {
+                                    return@onPreviewKeyEvent true
+                                }
+                            }
+                        }
+                    }
+                    false
+                }
+        ) {
+            Card(
+                modifier = Modifier
+                    .height(baseHeight)
+                    .aspectRatio(16f / 9f)
+                    .graphicsLayer {
+                        clip = true
+                    },
+                interactionSource = interactionSource,
+                border = cardBorder,
+                scale = cardScale,
+                onClick = {
+                    if (!isInMoveMode) {
+                        if (onClick != null) {
+                            onClick()
+                        } else {
+                            launchIntent?.let { intent ->
+                                try {
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Timber.e(e, "MoveableAppCard: Failed to launch app")
+                                }
+                            }
+                        }
+                    }
+                },
+                onLongClick = {
+                    if (!isInMoveMode) {
+                        menuVisible = true
+                    }
+                }
+            ) {
+                AsyncImage(
+                    modifier = Modifier.fillMaxSize(),
+                    model = imageRequest,
+                    contentDescription = app.displayName,
+                    contentScale = ContentScale.Fit,
+                )
+            }
+
+            Column(
+                modifier = Modifier.padding(top = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                FocusMarqueeText(
+                    text = app.displayName,
+                    focused = isFocused && !isInMoveMode && areAnimationsEnabled,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    )
+                )
+            }
+        }
+    }
+
     PopupContainer(
         visible = menuVisible && !isInMoveMode,
         onDismiss = { menuVisible = false },
-        content = {
-            Column(
-                modifier = modifier
-                    .width(cardWidth)
-                    .zIndex(if (isFocused || isInMoveMode) 1f else 0f)
-                    .onPreviewKeyEvent { event ->
-                        if (ignoreNextKeyUp && event.type == KeyEventType.KeyUp) {
-                            ignoreNextKeyUp = false
-                            return@onPreviewKeyEvent true
-                        }
-
-                        // Handle move mode key events
-                        if (isInMoveMode) {
-                            if (event.type == KeyEventType.KeyDown) {
-                                when (event.key.nativeKeyCode) {
-                                    KeyEvent.KEYCODE_DPAD_LEFT -> {
-                                        onMove?.invoke(MoveDirection.LEFT)
-                                        return@onPreviewKeyEvent true
-                                    }
-
-                                    KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                                        onMove?.invoke(MoveDirection.RIGHT)
-                                        return@onPreviewKeyEvent true
-                                    }
-
-                                    KeyEvent.KEYCODE_DPAD_UP -> {
-                                        onMove?.invoke(MoveDirection.UP)
-                                        return@onPreviewKeyEvent true
-                                    }
-
-                                    KeyEvent.KEYCODE_DPAD_DOWN -> {
-                                        onMove?.invoke(MoveDirection.DOWN)
-                                        return@onPreviewKeyEvent true
-                                    }
-
-                                    KeyEvent.KEYCODE_DPAD_CENTER,
-                                    KeyEvent.KEYCODE_ENTER -> {
-                                        onMoveModeChanged?.invoke(false)
-                                        ignoreNextKeyUp = true
-                                        return@onPreviewKeyEvent true
-                                    }
-
-                                    KeyEvent.KEYCODE_BACK -> {
-                                        onMoveModeChanged?.invoke(false)
-                                        return@onPreviewKeyEvent true
-                                    }
-                                }
-                            } else if (event.type == KeyEventType.KeyUp) {
-                                // Consume KeyUp for Center/Enter to prevent click action
-                                when (event.key.nativeKeyCode) {
-                                    KeyEvent.KEYCODE_DPAD_CENTER,
-                                    KeyEvent.KEYCODE_ENTER -> {
-                                        return@onPreviewKeyEvent true
-                                    }
-                                }
-                            }
-                        }
-                        false
-                    }
-            ) {
-                Card(
-                    modifier = Modifier
-                        .height(baseHeight)
-                        .aspectRatio(16f / 9f),
-                    interactionSource = interactionSource,
-                    border = CardDefaults.border(
-                        focusedBorder = Border(
-                            border = focusedBorderStroke,
-                        )
-                    ),
-                    scale = CardDefaults.scale(
-                        focusedScale = if (areAnimationsEnabled && !isInMoveMode) 1.05f else 1.0f
-                    ),
-                    onClick = {
-                        if (!isInMoveMode) {
-                            if (onClick != null) {
-                                onClick()
-                            } else {
-                                launchIntent?.let { intent ->
-                                    try {
-                                        context.startActivity(intent)
-                                    } catch (e: Exception) {
-                                        Timber.e(e, "MoveableAppCard: Failed to launch app")
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    onLongClick = {
-                        if (!isInMoveMode) {
-                            menuVisible = true
-                        }
-                    }
-                ) {
-                    AsyncImage(
-                        modifier = Modifier.fillMaxSize(),
-                        model = imageRequest,
-                        contentDescription = app.displayName,
-                        contentScale = ContentScale.Fit,
-                    )
-                }
-
-                Column(
-                    modifier = Modifier.padding(top = 6.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    FocusMarqueeText(
-                        text = app.displayName,
-                        focused = isFocused && !isInMoveMode && areAnimationsEnabled,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    )
-                }
-            }
-        },
+        content = cardContent,
         popupContent = {
             AppOptionsPopup(
                 isFavorite = isFavorite,

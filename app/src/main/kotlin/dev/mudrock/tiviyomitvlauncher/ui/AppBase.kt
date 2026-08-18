@@ -42,7 +42,7 @@ fun AppBase(
 	var onboardingShown by remember { mutableStateOf(showOnboarding) }
 	var deepLink by remember { mutableStateOf(pendingDeepLink) }
 
-	val baseColor = Color(backgroundColor)
+	val baseColor = remember(backgroundColor) { Color(backgroundColor) }
 
 	MaterialTheme(
 		colorScheme = darkColorScheme(
@@ -61,19 +61,13 @@ fun AppBase(
 			Surface(
 				modifier = Modifier.fillMaxSize()
 			) {
-				// Background layer (image or color)
+				// Background layer (custom image if configured, otherwise Surface already paints baseColor)
 				if (backgroundImageUri != null) {
 					AsyncImage(
 						model = backgroundImageUri!!.toUri(),
 						contentDescription = null,
 						modifier = Modifier.fillMaxSize(),
 						contentScale = ContentScale.Crop
-					)
-				} else {
-					Box(
-						modifier = Modifier
-							.fillMaxSize()
-							.background(baseColor)
 					)
 				}
 				

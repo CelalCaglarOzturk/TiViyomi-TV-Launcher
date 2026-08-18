@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -111,67 +112,78 @@ fun AppCard(
     
     val isFocused by interactionSource.collectIsFocusedAsState()
     val focusedBorderStroke = remember { BorderStroke(3.dp, Color.White) }
+    val cardBorder = CardDefaults.border(
+        focusedBorder = Border(
+            border = focusedBorderStroke,
+        )
+    )
+    val cardScale = CardDefaults.scale(
+        focusedScale = if (areAnimationsEnabled) 1.05f else 1.0f
+    )
 
-    PopupContainer(
-        visible = menuVisible && hasPopupContent,
-        onDismiss = { menuVisible = false },
-        content = {
-            Column(
-                modifier = modifier
-                    .width(cardWidth)
-                    .zIndex(if (isFocused) 1f else 0f)
-            ) {
-                Card(
-                    modifier = Modifier
-                        .height(baseHeight)
-                        .aspectRatio(16f / 9f),
-                    interactionSource = interactionSource,
-                    border = CardDefaults.border(
-                        focusedBorder = Border(
-                            border = focusedBorderStroke,
-                        )
-                    ),
-                    scale = CardDefaults.scale(
-                        focusedScale = if (areAnimationsEnabled) 1.05f else 1.0f
-                    ),
-                    onClick = {
-                        if (onClick != null) {
-                            onClick()
-                        } else {
-                            launchIntent?.let { intent ->
-                                context.startActivity(intent)
-                            }
-                        }
+    val cardContent = @Composable {
+        Column(
+            modifier = modifier
+                .width(cardWidth)
+                .zIndex(if (isFocused) 1f else 0f)
+        ) {
+            Card(
+                modifier = Modifier
+                    .height(baseHeight)
+                    .aspectRatio(16f / 9f)
+                    .graphicsLayer {
+                        clip = true
                     },
-                    onLongClick = {
-                        if (hasPopupContent) {
-                            menuVisible = true
+                interactionSource = interactionSource,
+                border = cardBorder,
+                scale = cardScale,
+                onClick = {
+                    if (onClick != null) {
+                        onClick()
+                    } else {
+                        launchIntent?.let { intent ->
+                            context.startActivity(intent)
                         }
                     }
-                ) {
-                    AsyncImage(
-                        modifier = Modifier.fillMaxSize(),
-                        model = imageRequest,
-                        contentDescription = app.displayName,
-                        contentScale = ContentScale.Fit,
-                    )
+                },
+                onLongClick = {
+                    if (hasPopupContent) {
+                        menuVisible = true
+                    }
                 }
-
-                Column(
-                    modifier = Modifier.padding(top = 6.dp)
-                ) {
-                    FocusMarqueeText(
-                        text = app.displayName,
-                        focused = isFocused && areAnimationsEnabled,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    )
-                }
+            ) {
+                AsyncImage(
+                    modifier = Modifier.fillMaxSize(),
+                    model = imageRequest,
+                    contentDescription = app.displayName,
+                    contentScale = ContentScale.Fit,
+                )
             }
-        },
-        popupContent = {
-            if (popupContent != null) popupContent()
+
+            Column(
+                modifier = Modifier.padding(top = 6.dp)
+            ) {
+                FocusMarqueeText(
+                    text = app.displayName,
+                    focused = isFocused && areAnimationsEnabled,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    )
+                )
+            }
         }
-    )
+    }
+
+    if (hasPopupContent) {
+        PopupContainer(
+            visible = menuVisible,
+            onDismiss = { menuVisible = false },
+            content = cardContent,
+            popupContent = {
+                if (popupContent != null) popupContent()
+            }
+        )
+    } else {
+        cardContent()
+    }
 }

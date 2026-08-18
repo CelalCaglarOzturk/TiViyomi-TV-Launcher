@@ -6,6 +6,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -47,11 +48,13 @@ fun FocusMarqueeText(
         Text(
             text = text,
             modifier = if (focused) {
-                modifier.basicMarquee(
-                    iterations = Int.MAX_VALUE,
-                    velocity = MarqueeVelocity,
-                    initialDelayMillis = 1200
-                )
+                modifier
+                    .graphicsLayer { clip = true }
+                    .basicMarquee(
+                        iterations = Int.MAX_VALUE,
+                        velocity = MarqueeVelocity,
+                        initialDelayMillis = 1200
+                    )
             } else {
                 modifier
             },

@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -125,6 +126,19 @@ fun ChannelProgramCard(
     }
 
     val focusedBorderStroke = remember { BorderStroke(3.dp, Color.White) }
+    val cardColors = CardDefaults.colors()
+    val cardBorder = CardDefaults.border(
+        focusedBorder = Border(
+            border = focusedBorderStroke,
+        )
+    )
+    val cardScale = CardDefaults.scale(
+        focusedScale = 1.0f
+    )
+
+    val movingInstructionsFontSize = remember(baseHeight, density) {
+        with(density) { (baseHeight.value / 10).toInt().dp.toSp() }
+    }
 
     Column(
         modifier = modifier.width(cardWidth)
@@ -132,20 +146,14 @@ fun ChannelProgramCard(
         Card(
             modifier = Modifier
                 .height(baseHeight)
-                .aspectRatio(aspectRatio),
+                .aspectRatio(aspectRatio)
+                .graphicsLayer {
+                    clip = true
+                },
             interactionSource = interactionSource,
-            colors = CardDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
-            ),
-            border = CardDefaults.border(
-                focusedBorder = Border(
-                    border = focusedBorderStroke,
-                )
-            ),
-            scale = CardDefaults.scale(
-                focusedScale = 1.0f
-            ),
+            colors = cardColors,
+            border = cardBorder,
+            scale = cardScale,
             onClick = {
                 launchIntent?.let { intent ->
                     context.startActivity(intent)
@@ -191,7 +199,7 @@ fun ChannelProgramCard(
                         Text(
                             text = stringResource(R.string.channel_moving_instructions),
                             color = Color.White,
-                            fontSize = with(LocalDensity.current) { (baseHeight.value / 10).toInt().dp.toSp() },
+                            fontSize = movingInstructionsFontSize,
                             fontWeight = FontWeight.Medium,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.align(Alignment.Center)
